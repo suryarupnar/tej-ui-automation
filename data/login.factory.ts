@@ -2,28 +2,28 @@
 export const loginData = {
 
     validUser:{
-        email: process.env.VALID_EMAIL || 'neha.jadhav@nimapinfotech.com',
-        pass : process.env.VALID_PASSWORD || 'Nimap@123'
+        email: process.env.VALID_EMAIL || '',
+        pass : process.env.VALID_PASSWORD || ''
 
     },
 
     invalidEmail:{
         email: 'notcorrect@abc.com',
-        pass : process.env.VALID_PASSWORD || 'Nimap@123'
+        pass : process.env.VALID_PASSWORD || ''
     },
 
     invalidPass:{
-        email: process.env.VALID_EMAIL || 'neha.jadhav@nimapinfotech.com',
+        email: process.env.VALID_EMAIL || '',
         pass : 'abcabc'
     },
 
     blankEmail:{
         email: '',
-        pass: process.env.VALID_PASSWORD || 'Nimap@123'
+        pass: process.env.VALID_PASSWORD || ''
     },
 
     blankPass: {
-        email:  process.env.VALID_EMAIL || 'neha.jadhav@nimapinfotech.com',
+        email:  process.env.VALID_EMAIL || '',
         pass : ''
     },
 
@@ -34,6 +34,6 @@ export const loginData = {
 
     invalidEmailFormat:{
         email : 'abcac',
-        pass : process.env.VALID_PASSWORD || 'Nimap@123'
+        pass : process.env.VALID_PASSWORD || ''
     }
 }
