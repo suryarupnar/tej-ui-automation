@@ -1,0 +1,38 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "https://tejffqa.nimapinfotech.in",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuaW1hcEBtY2MtaW5kaWEuY29tIiwiaWQiOiJlZDJmN2QyNy0yODgyLTQ2OWUtYTc0NC0wMDJkYjA5YjBlYWUiLCJjb21wYW55SWQiOjI5OSwiaWF0IjoxNzc2MjYxMzQyLCJleHAiOjE3NzY1MjA1NDJ9.WOPuakWi9NOkXhwDjB1LXzr8YLN_e-sAdJcxMYCC3nk"
+        },
+        {
+          "name": "companyName",
+          "value": "DEMOTRAKIT"
+        },
+        {
+          "name": "selectedBranchId",
+          "value": "299"
+        },
+        {
+          "name": "refreshToken",
+          "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuaW1hcEBtY2MtaW5kaWEuY29tIiwiaWQiOiJlZDJmN2QyNy0yODgyLTQ2OWUtYTc0NC0wMDJkYjA5YjBlYWUiLCJjb21wYW55SWQiOjI5OSwiaWF0IjoxNzc2MjYxMzQyLCJleHAiOjE4MDc3OTczNDJ9.FUd9Xtuz0W_rTvphgEtdOBkvhdyU5M0FMrOKEcCnSLU"
+        },
+        {
+          "name": "companies",
+          "value": "[{\"companyId\":299,\"companyName\":\"DEMOTRAKIT\",\"gstNo\":\"27ABCDE1234F1Z5\",\"parentId\":299,\"isMainBranch\":\"Y\"},{\"companyId\":1766,\"companyName\":\"DEMOTRAKIT ( Chennai ) \",\"gstNo\":\"\",\"parentId\":299,\"isMainBranch\":\"\"}]"
+        },
+        {
+          "name": "companyId",
+          "value": "299"
+        },
+        {
+          "name": "user",
+          "value": "{\"email\":\"nimap@mcc-india.com\",\"name\":\"Nimaptest1\",\"companyName\":\"DEMOTRAKIT\",\"companyId\":299,\"permissions\":[]}"
+        }
+      ]
+    }
+  ]
+}
