@@ -1,4 +1,3 @@
-
 # Playwright
 node_modules/
 /test-results/
@@ -8,3 +7,8 @@ node_modules/
 /playwright/.auth/
 .github/
 
+# Saved browser session – NEVER commit (contains auth tokens)
+auth/user.json
+
+# Environment variables – NEVER commit (contains credentials)
+#.env

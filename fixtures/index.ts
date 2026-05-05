@@ -1,17 +1,30 @@
 import { test as base, expect } from "@playwright/test"
 import { LoginPage } from "../pages/login.page"
+import { DashboardPage } from "../pages/dashboard.page"
+import { ShipmentsPage } from "../pages/shipments.page"
 
 
 type Fixtures = {
     loginPage: LoginPage,
-  
+    shipmentsPage: ShipmentsPage,
+    dashboardPage: DashboardPage
+
 }
 
 export const test = base.extend<Fixtures>({
 
     loginPage: async ({ page }, use) => {
         await use(new LoginPage(page))
+    },
+
+    dashboardPage: async ({ page }, use) => {
+        await use(new DashboardPage(page))
+    },
+
+    shipmentsPage: async ({ page }, use) => {
+        await use(new ShipmentsPage(page))
     }
+
 })
 
 export { expect }

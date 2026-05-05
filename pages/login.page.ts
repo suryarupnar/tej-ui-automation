@@ -5,9 +5,10 @@ export class LoginPage extends BasePage {
 
     // -- Locators --
   
-    readonly emailInput = this.page.getByLabel("Email ID")
+    readonly emailInput = this.page.getByLabel("User ID")
     readonly passwordInput = this.page.getByLabel("Password")
     readonly loginButton = this.page.getByRole('button',{name: "Sign in"})
+    readonly successMsg = this.page.getByText("Login Successful")
 
 
     // -- Actions --
@@ -24,7 +25,7 @@ export class LoginPage extends BasePage {
     // -- Assertions --
 
     async expectSuccess() {
-        await expect(this.page.getByText("Login Successful")).toBeVisible();
+        await expect(this.successMsg).toBeVisible();
     }
   
     async expectValidationError(message: string) {
