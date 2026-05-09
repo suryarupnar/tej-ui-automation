@@ -199,7 +199,7 @@ export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
 
             // Summary Totals (Expected values after UI calculation)
             { testId: 'grossWeight',      value: (count * gw).toString(),  interaction: 'readonly' },
-            { testId: 'netWeight',        value: (count * nw).toString(),  interaction: 'readonly' },
+            { testId: 'netWeight',        value: nw.toString(),            interaction: 'readonly' },
             { testId: 'grossVolume',      value: (count * volPerUnit).toString(), interaction: 'readonly' },
             { testId: 'totalPackages',    value: count.toString(),         interaction: 'readonly' },
         ];
