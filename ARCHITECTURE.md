@@ -13,8 +13,8 @@
 4. [Layer 1 – Fixtures](#4-layer-1--fixtures)
 5. [Layer 2 – Page Objects](#5-layer-2--page-objects)
 6. [Layer 3 – Data (Factories + Types + Archetypes)](#6-layer-3--data-factories--types--archetypes)
-7. [Layer 4 – Tests (Specs)](#7-layer-4--tests-specs)
-8. [Tab Resolution Logic](#8-tab-resolution-logic)
+7. [Layer 4 – Tests (Specs) & Test Flow](#7-layer-4--tests-specs--test-flow)
+8. [Tab Resolution & Field Mapping Logic](#8-tab-resolution--field-mapping-logic)
 9. [Shipment Combinations Matrix](#9-shipment-combinations-matrix)
 10. [Environment Variables](#10-environment-variables)
 11. [How to Run Tests](#11-how-to-run-tests)
@@ -38,7 +38,7 @@
 
 ## 2. Directory Structure
 
-```
+```text
 tej_portal_automation/
 │
 ├── .env                          ← Environment variables (git-ignored — copy from .env.example)
@@ -53,21 +53,23 @@ tej_portal_automation/
 │   ├── base.page.ts              ← Abstract base class (holds the `page` instance)
 │   ├── login.page.ts             ← Login page: locators + actions + assertions
 │   ├── dashboard.page.ts         ← Dashboard page (navigation entry point)
-│   └── shipments.page.ts         ← Shipments: create, fill, submit, assert tabs
+│   ├── shipments.page.ts         ← Shipments list & creation form interaction
+│   └── shipment-details.page.ts  ← Post-creation: ID capture, tab assertions, field validation
 │
 ├── data/                         ← Test data layer
 │   ├── interfaces/               ← TypeScript interfaces (pure shapes, no logic)
 │   │   ├── shipment.types.ts     ← ShipmentType | ShipmentMode | ShipmentStatus unions
 │   │   ├── details.types.ts      ← ShipmentDetailsData (all form fields)
 │   │   ├── cargo.types.ts        ← CargoData (cargo & equipment fields)
-│   │   └── master.types.ts       ← ShipmentData root shape
+│   │   ├── master.types.ts       ← ShipmentData root shape
+│   │   └── tab.field.types.ts    ← Types for form field mappings (TabFieldEntry)
 │   │
 │   ├── archetypes/               ← Default data templates (one per transport mode)
 │   │   ├── air.template.ts       ← Shared base for ALL Air shipments
 │   │   ├── land.template.ts      ← Shared base for ALL Land shipments
 │   │   └── sea.template.ts       ← Shared base for ALL Sea shipments
 │   │
-│   ├── shipment.factory.ts       ← Factory functions + tab resolver (core logic)
+│   ├── shipment.factory.ts       ← Factory functions + tab resolver + field mapper
 │   └── login.factory.ts          ← Login scenario data map
 │
 ├── tests/                        ← Spec files (test cases only — no locators)
@@ -76,7 +78,7 @@ tej_portal_automation/
 │   ├── auth/
 │   │   └── login.spec.ts         ← Data-driven login tests (@smoke)
 │   └── shipments/
-│       └── shipments.spec.ts     ← All 18 shipment creation + tab assertion tests
+│       └── shipments.spec.ts     ← Shipment E2E test flows
 │
 ├── utils/
 │   └── object.utils.ts           ← deepMerge + DeepPartial utility
@@ -91,13 +93,13 @@ tej_portal_automation/
 
 The framework follows a strict **4-layer architecture**. Each layer has a single responsibility and must never reach into a lower layer's concerns.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  LAYER 4 – TESTS  (tests/**/*.spec.ts)                      │
 │  WHAT to test. Reads like English. Zero locator strings.    │
 ├─────────────────────────────────────────────────────────────┤
 │  LAYER 3 – DATA  (data/)                                    │
-│  WHAT data to use. Factories build typed payloads.          │
+│  WHAT data to use. Factories build typed payloads & maps.   │
 ├─────────────────────────────────────────────────────────────┤
 │  LAYER 2 – PAGE OBJECTS  (pages/)                           │
 │  HOW to interact with the UI. All locators live here.       │
@@ -120,9 +122,10 @@ Playwright fixtures are the dependency injection system. Instead of `new Shipmen
 
 ```typescript
 export const test = base.extend<Fixtures>({
-    loginPage:     async ({ page }, use) => { await use(new LoginPage(page));     },
-    dashboardPage: async ({ page }, use) => { await use(new DashboardPage(page)); },
-    shipmentsPage: async ({ page }, use) => { await use(new ShipmentsPage(page)); },
+    loginPage:           async ({ page }, use) => { await use(new LoginPage(page)); },
+    dashboardPage:       async ({ page }, use) => { await use(new DashboardPage(page)); },
+    shipmentsPage:       async ({ page }, use) => { await use(new ShipmentsPage(page)); },
+    shipmentDetailsPage: async ({ page }, use) => { await use(new ShipmentDetailsPage(page)); },
 });
 ```
 
@@ -130,8 +133,8 @@ export const test = base.extend<Fixtures>({
 ```typescript
 import { test } from '../../fixtures';
 
-test('example', async ({ dashboardPage, shipmentsPage }) => {
-    // Both are auto-instantiated and scoped to this test's browser page
+test('example', async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
+    // Objects are auto-instantiated and scoped to this test's browser page
 });
 ```
 
@@ -146,32 +149,34 @@ test('example', async ({ dashboardPage, shipmentsPage }) => {
 
 ### Class Hierarchy
 
-```
-BasePage
+```text
+BasePage (provides core generic methods like `selectByTestId`)
 ├── LoginPage
 ├── DashboardPage
-└── ShipmentsPage
+├── ShipmentsPage
+└── ShipmentDetailsPage
 ```
-
-`BasePage` holds the shared `page: Page` instance. All other page objects extend it.
 
 ### ShipmentsPage – Key API
 
 | Method | What it does |
 |---|---|
 | `goto()` | Clicks Operations → Shipments, waits for network idle |
-| `openNewRegularShipmentForm()` | New Shipment → New Regular Shipment → waits for dialog |
-| `fillNewShipmentForm(data)` | Fills all form dropdowns via `data-testid` |
-| `submitNewShipmentForm()` | Create → Generate → OK; returns shipment ID string |
-| `createNewRegularShipment(data)` | **Composed**: open + fill + submit in one call |
+| `createNewRegularShipment(data)` | Fills the initial creation form (Type, Customer, Mode) |
+| `openShipmentBySerialNo(serialNo)` | Searches the Shipments list and opens the specified record |
+
+### ShipmentDetailsPage – Key API
+
+This page handles the post-creation lifecycle (ID capture, filling details, validation).
+
+| Method | What it does |
+|---|---|
+| `generateAndCaptureId()` | Clicks Generate, handles modals, captures & returns serialNo |
 | `expectDetailTabs(data)` | Asserts all expected tabs are visible (resolver-driven) |
-| `expectTabNotPresent(name)` | Asserts tab is **not attached** to the DOM |
-| `expectTabsAbsent(names[])` | Batch `expectTabNotPresent` for multiple tabs |
-
-### Why `not.toBeAttached()` not `not.toBeVisible()`?
-
-Conditional tabs are **never rendered** in the DOM when not applicable — they are not just hidden.
-`toBeAttached()` checks DOM presence (correct). `toBeVisible()` would pass even if the element exists but is `display:none` (wrong for our use case).
+| `expectTabsAbsent(names[])` | Asserts specific tabs are not attached to DOM |
+| `fillAllTabs(data)` | Iterates through `resolveTabFieldMap`, filling & saving each tab |
+| `validateAllTabs(data)` | Re-opens each tab and asserts fields match expected values |
+| `fillSaveAndVerifyTab(...)`| Composed method to run fill → save → verify for one tab |
 
 ---
 
@@ -179,7 +184,7 @@ Conditional tabs are **never rendered** in the DOM when not applicable — they 
 
 ### The ShipmentData Shape
 
-```
+```text
 ShipmentData                          ← master.types.ts
 ├── details: ShipmentDetailsData      ← form fields (type, mode, customer...)
 ├── cargo?:  CargoData                ← Cargo & Equipment tab
@@ -192,23 +197,13 @@ ShipmentData                          ← master.types.ts
 └── billing?: Record<string,unknown>  ← Cost & Revenues tab (all types)
 ```
 
-### Valid ShipmentType Values
-
-```
-Air Inbound    | Air Cross Trade | Air Outbound
-Land Inbound   | Land Cross Trade | Land Domestic | Land Outbound
-Sea Inbound    | Sea Cross Trade | Sea Domestic   | Sea Outbound
-```
-
 ### Valid ShipmentMode Values
 
 | Mode | Transport |
 |---|---|
-| `MAWB` | Air – master AWB only |
-| `MAWB & HAWB` | Air – master + house AWB |
+| `MAWB Only` / `MAWB & HAWB` | Air |
 | `Waybill` | Land |
-| `MB/L` | Sea – master B/L only |
-| `MB/L & HB/L` | Sea – master + house B/L |
+| `MB/L Only` / `MB/L & HB/L` | Sea |
 
 ### Archetypes — Default Templates
 
@@ -217,7 +212,7 @@ Each transport mode has one archetype file with sensible defaults. Tests only ov
 ```typescript
 // air.template.ts
 export const airBaseTemplate: ShipmentData = {
-    details: { shipmentType: 'Air Outbound', shipmentMode: 'MAWB', ... },
+    details: { shipmentType: 'Air Outbound', shipmentMode: 'MAWB Only', ... },
     cargo:   { grossWeight: '100', packageCount: 1, packageType: 'Box', ... },
 };
 ```
@@ -225,92 +220,88 @@ export const airBaseTemplate: ShipmentData = {
 ### Factory Functions
 
 ```typescript
-createAirShipment(overrides?)   // deepMerge(airBaseTemplate,  overrides)
+createAirShipment(overrides?)   // deepMerge(airBaseTemplate, overrides)
 createLandShipment(overrides?)  // deepMerge(landBaseTemplate, overrides)
-createSeaShipment(overrides?)   // deepMerge(seaBaseTemplate,  overrides)
+createSeaShipment(overrides?)   // deepMerge(seaBaseTemplate, overrides)
 ```
-
-**`deepMerge` is safe** — passing `{ cargo: { grossWeight: '250' } }` changes only that one field; all other cargo properties are preserved from the archetype.
 
 ---
 
-## 7. Layer 4 – Tests (Specs)
+## 7. Layer 4 – Tests (Specs) & Test Flow
 
 **File:** `tests/shipments/shipments.spec.ts`
 
-### Two Shared Helpers (all test logic in one place)
+The test framework follows a **5-step lifecycle** using Playwright's `test.step()` to decouple shipment creation from field validations. This ensures maximum reporting granularity.
 
-```typescript
-// ① Typed alias so fixture destructuring is concise
-type Pages = { dashboardPage: DashboardPage; shipmentsPage: ShipmentsPage };
+### The Standard Test Flow (`runScenario`)
 
-// ② Every test calls exactly this function — nothing else
-async function runScenario(
-    { dashboardPage, shipmentsPage }: Pages,
-    data: ShipmentData,
-    absentTabs: string[] = [],
-) {
-    await dashboardPage.goto();
-    await shipmentsPage.goto();
-    const id = await shipmentsPage.createNewRegularShipment(data);
-    console.log('Created shipment ID:', id);
-    await shipmentsPage.expectDetailTabs(data);
-    await shipmentsPage.expectTabsAbsent(absentTabs);
-}
-```
+Every standard E2E test runs through these 5 steps:
 
-### What a test looks like
+1. **Step 1 │ Create Shipment**
+   - Navigates to Dashboard -> Shipments.
+   - Fills initial setup form via `ShipmentsPage.createNewRegularShipment()`.
+   - Clicks "Generate" and captures the newly created ID (`serialNo`).
+
+2. **Step 2 │ Assert Tabs**
+   - Verifies the correct tabs appeared based on transport type and mode.
+   - Also verifies that conditional tabs (e.g. HAWB) are explicitly absent if not expected.
+
+3. **Step 3 │ Fill & Save All Tabs**
+   - Navigates through every expected tab.
+   - Fills the fields sequentially (inputs, datepickers, comboboxes) and hits "Save".
+
+4. **Step 4 │ Re-open from List**
+   - Navigates back to the main Shipments list.
+   - Searches for the `serialNo` created in Step 1 and opens it to ensure data persisted into a fresh state.
+
+5. **Step 5 │ Validate Fields**
+   - Cycles through all tabs again.
+   - Reads every field's value and asserts it strictly matches the data passed from the factory.
+
+### Existing Shipment Validation (`openAndVerifyExistingShipment`)
+
+A secondary scenario flow allows developers to skip creation and validate an existing shipment by setting `EXISTING_SHIPMENT_NO` in `.env`. This is useful for rapid debugging of the validation steps.
+
+### Example Spec Structure
 
 ```typescript
 test.describe('Air Inbound', () => {
-    test.slow(); // multiplies default timeout × 3
+    test.slow();
 
     test('MAWB only → MAWB tab present, HAWB absent',
-        async ({ dashboardPage, shipmentsPage }) => {
+        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
-                { dashboardPage, shipmentsPage },
-                createAirShipment({ details: { shipmentType: 'Air Inbound', shipmentMode: 'MAWB' } }),
+                { dashboardPage, shipmentsPage, shipmentDetailsPage },
+                createAirShipment({ details: { shipmentType: 'Air Inbound', shipmentMode: 'MAWB Only' } }),
                 ['HAWB'],  // must NOT be in DOM
             );
         });
 });
 ```
 
-Adding a new combination = adding one `test()` block. No other file changes.
-
 ---
 
-## 8. Tab Resolution Logic
+## 8. Tab Resolution & Field Mapping Logic
 
-**File:** `data/shipment.factory.ts` → `resolveExpectedTabs(data)`
+**File:** `data/shipment.factory.ts`
 
-Uses **three lookup tables** instead of if/else chains. The resolver is data-driven:
+### Tab Presence (`resolveExpectedTabs`)
+Uses lookup tables to decide which tabs to assert without writing if/else chains:
+`shipmentType` → `TRANSPORT_GROUP` → `BASE_TRANSPORT_TABS` + `MODE_EXTRA_TABS`
 
+### Field Mapping (`resolveTabFieldMap`)
+A powerful mechanism that translates nested JSON data into Playwright interactions. It outputs a `TabFieldMap` where each key is a tab name, containing an array of `TabFieldEntry` records.
+
+A `TabFieldEntry` dictates:
+- `testId`: The data-testid attribute in the UI.
+- `value`: The string to fill/assert.
+- `interaction`: The control type (`fill`, `combobox`, `datepicker`, `text`).
+
+**Example:**
+```typescript
+{ testId: 'shippingTermsId', value: 'FOB', interaction: 'combobox' }
 ```
-shipmentType  ──→  TRANSPORT_GROUP  ──→  'air' | 'land' | 'sea'
-                         │
-                         ▼
-               BASE_TRANSPORT_TABS  ──→  always-on tabs for that group
-                         +
-shipmentMode  ──→  MODE_EXTRA_TABS  ──→  additional tabs unlocked by this mode
-                         │
-                         ▼
-              { alwaysVisible, conditional }
-```
-
-### Always Visible (every shipment, every type)
-
-- `Shipment Details`
-- `Cargo & Equipment`
-- `Cost & Revenues`
-
-### Conditional Tabs
-
-| Group | Base Tabs (always) | Extra Tabs (by mode) |
-|---|---|---|
-| Air | `MAWB` | + `HAWB` when `MAWB & HAWB` |
-| Land | `Waybill`, `Trucking` | _(none)_ |
-| Sea | `MBL`, `Trucking` | + `HBL` when `MB/L & HB/L` |
+The `ShipmentDetailsPage` engine reads this map and automatically handles complex UI interactions (like clicking `Edit Dates` before a datepicker) without further coding required in the spec.
 
 ---
 
@@ -318,23 +309,23 @@ shipmentMode  ──→  MODE_EXTRA_TABS  ──→  additional tabs unlocked by
 
 | # | Type | Mode | Tabs Present (conditional) | Absent |
 |---|---|---|---|---|
-| 1 | Air Inbound | MAWB | MAWB | HAWB |
+| 1 | Air Inbound | MAWB Only | MAWB | HAWB |
 | 2 | Air Inbound | MAWB & HAWB | MAWB, HAWB | — |
-| 3 | Air Cross Trade | MAWB | MAWB | HAWB |
+| 3 | Air Cross Trade | MAWB Only | MAWB | HAWB |
 | 4 | Air Cross Trade | MAWB & HAWB | MAWB, HAWB | — |
-| 5 | Air Outbound | MAWB | MAWB | HAWB |
+| 5 | Air Outbound | MAWB Only | MAWB | HAWB |
 | 6 | Air Outbound | MAWB & HAWB | MAWB, HAWB | — |
 | 7 | Land Cross Trade | Waybill | Waybill, Trucking | — |
 | 8 | Land Domestic | Waybill | Waybill, Trucking | — |
 | 9 | Land Inbound | Waybill | Waybill, Trucking | — |
 | 10 | Land Outbound | Waybill | Waybill, Trucking | — |
-| 11 | Sea Cross Trade | MB/L | MBL, Trucking | HBL |
+| 11 | Sea Cross Trade | MB/L Only | MBL, Trucking | HBL |
 | 12 | Sea Cross Trade | MB/L & HB/L | MBL, HBL, Trucking | — |
-| 13 | Sea Domestic | MB/L | MBL, Trucking | HBL |
+| 13 | Sea Domestic | MB/L Only | MBL, Trucking | HBL |
 | 14 | Sea Domestic | MB/L & HB/L | MBL, HBL, Trucking | — |
-| 15 | Sea Inbound | MB/L | MBL, Trucking | HBL |
+| 15 | Sea Inbound | MB/L Only | MBL, Trucking | HBL |
 | 16 | Sea Inbound | MB/L & HB/L | MBL, HBL, Trucking | — |
-| 17 | Sea Outbound | MB/L | MBL, Trucking | HBL |
+| 17 | Sea Outbound | MB/L Only | MBL, Trucking | HBL |
 | 18 | Sea Outbound | MB/L & HB/L | MBL, HBL, Trucking | — |
 
 > All 18 tests also verify the 3 universal tabs: `Shipment Details`, `Cargo & Equipment`, `Cost & Revenues`
@@ -351,9 +342,7 @@ Copy `.env.example` to `.env` and fill in your values. **Never commit `.env`.**
 | `VALID_EMAIL` | Login email for auth tests |
 | `VALID_PASSWORD` | Login password |
 | `SETUP_EMAIL` | Email used by `auth.setup.ts` to save session |
-| `SHIPMENT_CUSTOMER` | Default customer for shipment archetype data |
-| `SHIPMENT_AGENT` | Default agent |
-| `SHIPMENT_USER` | Default assigned user |
+| `EXISTING_SHIPMENT_NO` | (Optional) Target ID to run `openAndVerifyExistingShipment` |
 
 ---
 
@@ -404,22 +393,7 @@ const TRANSPORT_GROUP = {
 };
 ```
 
-**3. `tests/shipments/shipments.spec.ts`** — add a describe block:
-```typescript
-test.describe('Air Domestic', () => {
-    test.slow();
-    test('MAWB only → MAWB tab present, HAWB absent',
-        async ({ dashboardPage, shipmentsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage },
-                createAirShipment({ details: { shipmentType: 'Air Domestic', shipmentMode: 'MAWB' } }),
-                ['HAWB'],
-            );
-        });
-});
-```
-
-**No other files need to change.**
+**3. `tests/shipments/shipments.spec.ts`** — add a describe block and use `createAirShipment`. Done.
 
 ---
 
@@ -484,9 +458,27 @@ test('example', async ({ dashboardPage, invoicesPage }) => { ... });
 
 | # | Area | Current State | Recommended Fix |
 |---|---|---|---|
-| 1 | `selectByTestId` fallback | Silently falls back to first option on mismatch | Add `strict` option to throw instead of silently falling back |
+| 1 | `selectByTestId` fallback | Handles strict checks well but could use a configurable timeout | Add optional timeout parameter for slow dropdowns |
 | 2 | Login assertions | Complex if/else inside test body | Move to `loginPage.assertScenario(name)` method |
 | 3 | `test.slow()` repetition | Declared in every describe block | Set a global `timeout` in `playwright.config.ts` for shipments project |
 | 4 | Reporters | HTML only | Add `list` reporter for CI: `reporter: [['html'], ['list']]` |
 | 5 | Tab name literals | Strings in factory and spec | Extract to `TAB_NAMES` const in `shipment.types.ts` |
-| 6 | Unconditional tab fills | `mbl`, `hbl`, `waybill` fields defined but not filled | Implement in `fillNewShipmentForm` once `data-testid`s are mapped |
+
+---
+
+## 16. Standard UI Interaction Patterns
+
+### MUI Autocomplete / Combobox Selection
+When interacting with MUI Autocomplete components, always use the following pattern to ensure maximum stability and prevent race conditions. This is the standardized approach used in `BasePage.selectByTestId`.
+
+**The Rule:**
+1. Use `fill(value)` directly on the input.
+2. **Wait 300ms** to allow MUI's async filter to settle.
+3. Click the first option using a **case-insensitive regex**: `getByRole('option', { name: new RegExp(value, 'i') }).first().click()`.
+
+**Avoid:**
+- Pressing `ArrowDown` or `Enter` (slow and prone to race conditions).
+- Using `exact: true` if the UI text has dynamic formatting (e.g. extra labels or codes).
+- Relying on immediate clicks without a settle delay.
+
+---

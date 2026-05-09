@@ -24,10 +24,10 @@ export type ShipmentType =
 //   Sea   → MB/L | MB/L & HB/L
 // ─────────────────────────────────────────────────────────────────────────────
 export type ShipmentMode =
-  | 'MAWB'          // Air – master only
+  | 'MAWB Only'          // Air – master only
   | 'MAWB & HAWB'   // Air – master + house
   | 'Waybill'       // Land
-  | 'MB/L'          // Sea – master only
+  | 'MB/L Only'          // Sea – master only
   | 'MB/L & HB/L';  // Sea – master + house
 
 // ─────────────────────────────────────────────────────────────────────────────

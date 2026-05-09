@@ -18,6 +18,7 @@ export default defineConfig({
 
   testDir: './tests',
   testIgnore: ['tests/auth/**'],
+  timeout: 120 * 1000, // 2 minutes global timeout for large sequential form tests
 
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -40,7 +41,7 @@ export default defineConfig({
     screenshot: 'on',
     headless: false,
     launchOptions: {
-      slowMo: 500,
+      slowMo: 50,
     },
   },
 
