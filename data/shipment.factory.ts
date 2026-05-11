@@ -292,13 +292,16 @@ function buildEntriesFromRecord(record: Record<string, unknown>, readonlyKeys: s
                 };
             }
 
-            // Smart detection: if testId contains 'Id', 'Country', 'Airport', 'agent', 'coLoader', use combobox
-            const isCombobox = /Id|Country|Airport|agent|coLoader|noOf/i.test(testId);
+            // Smart detection: 
+            // 1. Datepickers
+            const isDate = /Date|issuedOn/i.test(testId);
+            // 2. Comboboxes (MUI Autocomplete)
+            const isCombobox = /Id|Country|Airport|agent|coLoader|noOf|chargeCode|specialHandling/i.test(testId);
             
             return {
                 testId,
                 value:       valStr,
-                interaction: (isCombobox ? 'combobox' : 'fill') as 'fill' | 'combobox',
+                interaction: (isDate ? 'datepicker' : (isCombobox ? 'combobox' : 'fill')) as TabFieldEntry['interaction'],
             };
         });
 }

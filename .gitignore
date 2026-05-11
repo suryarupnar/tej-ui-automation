@@ -6,6 +6,8 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 .github/
+/tests/recorder.spec.ts
+
 
 # Saved browser session – NEVER commit (contains auth tokens)
 auth/user.json

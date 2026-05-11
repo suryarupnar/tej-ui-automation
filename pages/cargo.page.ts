@@ -42,8 +42,8 @@ export class CargoPage extends BasePage {
         await this.page.waitForTimeout(1000);
 
         // 6. Save the modal
-        // Using a combination of container class and role for stability
-        const modalSaveBtn = modal.locator('._cargoSaveBtnContainer_1jyf6_380').getByRole('button', { name: 'Save' });
+        // Using a robust role-based locator instead of a brittle class
+        const modalSaveBtn = modal.getByRole('button', { name: 'Save' });
         await modalSaveBtn.click();
         
         // Wait for modal to disappear

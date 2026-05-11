@@ -6,7 +6,7 @@
       "localStorage": [
         {
           "name": "accessToken",
-          "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJERU0tMjciLCJjb21wYW55SWQiOjI5OSwiaWQiOiIxODY5MTBmMy01NDI3LTRmMGYtYTRiOC1jNmYzODY4NzAxM2UiLCJpYXQiOjE3NzgzMzA5NjEsImV4cCI6MTc3ODU5MDE2MX0.ssJbVRf-2I-ApfP9JOrkMfW2hMqgHD47n_303sy-YDU"
+          "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJERU0tMjciLCJjb21wYW55SWQiOjI5OSwiaWQiOiJmYWE2MTI0YS1iN2RkLTQ2NDItYTAyNy0wZDYwNzk4NTNlMzYiLCJpYXQiOjE3Nzg0OTM5NDAsImV4cCI6MTc3ODc1MzE0MH0.24Uq6hwmuT3nLMgMmJKAYAdpTOqSbExgGcBF_H-q0tY"
         },
         {
           "name": "companyName",
@@ -18,7 +18,7 @@
         },
         {
           "name": "refreshToken",
-          "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJERU0tMjciLCJjb21wYW55SWQiOjI5OSwiaWQiOiIxODY5MTBmMy01NDI3LTRmMGYtYTRiOC1jNmYzODY4NzAxM2UiLCJpYXQiOjE3NzgzMzA5NjEsImV4cCI6MTgwOTg2Njk2MX0.bd96QB7-yZl0EZEsq_RZ5z_VUTE3nraI0s7ADzQTAQg"
+          "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJERU0tMjciLCJjb21wYW55SWQiOjI5OSwiaWQiOiJmYWE2MTI0YS1iN2RkLTQ2NDItYTAyNy0wZDYwNzk4NTNlMzYiLCJpYXQiOjE3Nzg0OTM5NDAsImV4cCI6MTgxMDAyOTk0MH0.FuXUNUT-ifM3t7DqvHxGig0BPRJZr8VjL8aQJx7F3Cg"
         },
         {
           "name": "companies",

@@ -22,7 +22,7 @@ export const airBaseTemplate: ShipmentData = {
     shippingTerms:   'FCA',
     category:        'Dry Bulk',          // shipmentTypeId dropdown
     nominatedBy:     'Agent',             // nominationType dropdown
-    tags:            ['high-priority'],   // tagIds multi-select
+    tags:            [],                  // Empty to avoid flaky autocomplete
     client:          'ATMAN PHARMACEUTICALS',
     office:          'Mumbai',
 
@@ -104,9 +104,36 @@ export const airBaseTemplate: ShipmentData = {
 
   // ── HAWB tab field data (only used when mode = 'MAWB & HAWB') ───────────
   hawb: {
-    'hawb-serial-number':   'HB-AIR-001',
-    'hawb-origin-airport':  'DXB',
-    'hawb-dest-airport':    'LHR',
+    'hawb.hawbNumber':      'H-' + Date.now().toString().slice(-6),
+    'hawb.shipperName':     'ABC SHIPPING LTD',
+    'hawb.consigneeName':   'XYZ PHARMA',
+    'hawb.notifyName':      'XYZ PHARMA',
+    'hawb.goodsDescription': 'ELECTRONIC COMPONENTS',
+    'hawb.marksAndNumbers':  'BOX 1-50',
+    
+    // Dates (wrapper IDs for datepicker)
+    'hawb.letterOfCreditIssueDate-wrapper':  '01/05/2026',
+    'hawb.letterOfCreditExpiryDate-wrapper': '31/12/2026',
+    'hawb.issuedOn-wrapper':                 '28/05/2026',
+
+    // Charges & Accounting
+    'hawb.chargeCode':          'FC - FREIGHT_CHARGE',
+    'declaredValueForCarriage': '5000',
+    'declaredValueForCustoms':  '5000',
+    'amountOfInsurance':        '1000',
+    'weightCharge':             '150',
+    'valuationCharge':          '10',
+    'tax':                      '5',
+    'totalOtherChargesDueAgent': '20',
+    'totalOtherChargesDueCarrier': '30',
+    
+    // License/Cert
+    'exportLicenseNo':          'EL-9922',
+    
+    // Handling
+    'hawb.specialServiceInformation': 'HANDLE WITH CARE',
+    'hawb.otherServiceInformation':   'DO NOT STACK',
+    'hawb.sci':                       'I',
   },
 };
 

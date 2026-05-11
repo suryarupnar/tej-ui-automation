@@ -15,25 +15,68 @@ export const landBaseTemplate: ShipmentData = {
     agent:    'Imran',
     user:     'Michael Reed',
     clearanceJobNumber: '',
+    clearanceCompany: '',
     secondaryServices:  [],
+
+    // ── Shipment Details tab fields ───────────────
+    lineOfBusiness:  'Freight Forwarding',
+    shippingTerms:   'FCA',
+    category:        'Dry Bulk',
+    nominatedBy:     'Agent',
+    tags:            [],
+    client:          'ATMAN PHARMACEUTICALS',
+    office:          'Mumbai',
+    agent:           'Imran',
+    carrier:         'DHL',
+    
+    originCountry:      'India',
+    originAddress:      'Mumbai Test Address',
+    destinationCountry: 'United Arab Emirates',
+    destinationAddress: 'Dubai Test Address',
   },
   cargo: {
     grossWeight:  '100',
     packageCount: 1,
     packageType:  'Box',
-    commodityType: 'General Cargo',
+    commodityType: 'Cereals',
   },
   // ── Waybill tab field data ───────────────────────────────────────────────
   // Update keys to match actual data-testid attributes in the Waybill tab.
   waybill: {
-    'waybill-serial-number': 'WB-LND-001',
-    'waybill-carrier':       'DHL',
-    'waybill-origin':        'Dubai',
-    'waybill-destination':   'Abu Dhabi',
-  },
-  // ── Trucking tab field data ──────────────────────────────────────────────
-  trucking: {
-    'trucking-vehicle-number': 'TRK-001',
-    'trucking-driver-name':    'Ali Hassan',
+    'waybill.waybillNumber': 'W-' + Date.now().toString().slice(-6),
+    
+    // Shipper
+    'waybill.shipperName':         'ABC EXPORTS',
+    'waybill.shipperAccountNo':    'ACC-991',
+    'waybill.shipperAddressLine1': 'Sector 10',
+    'waybill.shipperAddressLine2': 'MIDC',
+    'waybill.shipperPlaceCity':    'Mumbai',
+    'waybill.shipperZipCode':      '400001',
+    'waybill.shipperPostPortStatus': 'Maharashtra',
+    'waybill.shipperCountry':      'India',
+    
+    // Consignee
+    'waybill.consigneeName':         'XYZ IMPORTS',
+    'waybill.consigneeAddressLine1': 'Road 44',
+    'waybill.consigneePlaceCity':    'Dubai',
+    'waybill.consigneeCountry':      'United Arab Emirates',
+
+    // Cargo Info
+    'waybill.fullOriginDescription': 'GENERAL LAND CARGO',
+    'waybill.marksAndNumbers':       'PACK-1-50',
+
+    // Address Details
+    'waybill.originCountry':      'India',
+    'waybill.originAddress':      'Mumbai, Maharashtra',
+    'waybill.destinationCountry': 'United Arab Emirates',
+    'waybill.destinationAddress': 'Dubai, UAE',
+
+    // References & Accounting
+    'waybill.attachedDocuments':  'INVOICE, PACKING LIST',
+    'waybill.senderInstructions': 'DELIVER BEFORE 5PM',
+    'waybill.declaredValueInp':   '15000',
+    'waybill.issueLocation':      'MUMBAI',
+    'waybill.issuedOn-wrapper':   '28/05/2026',
+    'waybill.remarks':            'LAND SHIPMENT TEST',
   },
 };

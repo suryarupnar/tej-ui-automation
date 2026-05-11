@@ -106,7 +106,9 @@ export class ShipmentDetailsPage extends BasePage {
     // ─────────────────────────────────────────────────────────────────────────
 
     async saveCurrentTab() {
-        await this.saveButton.click();
+        // Target the visible Save button to avoid clicking hidden ones from other tabs
+        const activeSaveButton = this.saveButton.filter({ visible: true }).first();
+        await activeSaveButton.click();
         const successToast = this.page.getByText('Shipment saved successfully', { exact: true });
         await expect(successToast).toBeVisible({ timeout: 10000 });
     }
@@ -125,8 +127,8 @@ export class ShipmentDetailsPage extends BasePage {
     }
 
     private async expandAllSections() {
-        // Target MUI accordions within h3 headings
-        const headers = this.page.locator('h3');
+        // Target MUI accordions within h3 headings, scoped to the active tab
+        const headers = this.page.getByRole('tabpanel').locator('h3');
         const count = await headers.count();
         
         for (let i = 0; i < count; i++) {
