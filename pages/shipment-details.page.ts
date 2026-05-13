@@ -127,35 +127,35 @@ export class ShipmentDetailsPage extends BasePage {
     }
 
     private async expandAllSections() {
-        // Target MUI accordions within h3 headings, scoped to the active tab
-        const headers = this.page.getByRole('tabpanel').locator('h3');
+        // Target MUI accordions within h3 headings, scoped to the ACTIVE visible tab
+        const activePanel = this.page.getByRole('tabpanel').filter({ visible: true });
+        const headers = activePanel.locator('h3');
         const count = await headers.count();
         
         for (let i = 0; i < count; i++) {
             const button = headers.nth(i).locator('button').first();
             if (await button.count() > 0) {
                 const isExpanded = await button.getAttribute('aria-expanded');
-                // Only click if it's currently collapsed
+                // Only click if it's currently collapsed (aria-expanded is not 'true')
                 if (isExpanded !== 'true') {
                     await button.click();
-                    await this.page.waitForTimeout(300); // Wait for animation
+                    await this.page.waitForTimeout(300); // Wait for accordion animation
                 }
             }
         }
     }
 
     private fieldLocator(testId: string) {
-        // Scope to the active tab panel to avoid duplicate elements from global headers
-        const activeTabPanel = this.page.getByRole('tabpanel');
+        // Scope to the ACTIVE visible tab panel to avoid duplicate elements from hidden tabs
+        const activeTabPanel = this.page.getByRole('tabpanel').filter({ visible: true });
 
         const escapedId = testId.replace(/\./g, '\\.');
         const primary = activeTabPanel.getByTestId(testId).or(activeTabPanel.locator(`#${escapedId}`));
         
-        // Targeted fallback for fields that only have labels (common in Shipment Details tab)
+        // Targeted fallback for fields that only have labels
         const labelText = testId.replace(/Id$/, '').replace(/([A-Z])/g, ' $1').trim();
         const capitalizedLabel = labelText.charAt(0).toUpperCase() + labelText.slice(1);
         
-        // Check for both original and capitalized labels to improve resilience
         const fallback = activeTabPanel.getByLabel(capitalizedLabel, { exact: false })
             .or(activeTabPanel.getByLabel(labelText, { exact: false }));
 
@@ -185,7 +185,9 @@ export class ShipmentDetailsPage extends BasePage {
         for (const { testId, value, values, interaction = 'fill' } of sortedFields) {
             const field = this.fieldLocator(testId);
             
-            // Check if field exists first (short timeout)
+            // Wait for field to be attached (gives time for animations/transitions)
+            await field.waitFor({ state: 'attached', timeout: 2000 }).catch(() => {});
+
             if (await field.count() === 0) {
                 console.log(`      - Field not found, skipping: ${testId}`);
                 continue;
@@ -231,6 +233,10 @@ export class ShipmentDetailsPage extends BasePage {
             if (!value) continue;
             
             const baseLocator = this.fieldLocator(testId);
+
+            // Wait for field for verification (buffer for persistence/rendering)
+            await baseLocator.waitFor({ state: 'attached', timeout: 3000 }).catch(() => {});
+
             if (await baseLocator.count() === 0) {
                 console.log(`      - Field not found for verification, skipping: ${testId}`);
                 continue;
@@ -244,14 +250,14 @@ export class ShipmentDetailsPage extends BasePage {
             } else if (interaction === 'text') {
                 await expect(baseLocator).toHaveText(value as string);
             } else {
-                // Determine if we need to target a nested input (for Autocomplete)
-                const isInputOrTextarea = await baseLocator.evaluate(e => 
-                    e.tagName.toLowerCase().includes('input') || 
-                    e.tagName.toLowerCase().includes('textarea')
-                ).catch(() => false);
-
-                const input = isInputOrTextarea ? baseLocator : baseLocator.locator('input, textarea').first();
-                await expect(input).toHaveValue(value as string, { timeout: 10000 });
+                // Determine if we should check value or text (handles inputs and readonly wrappers)
+                const input = baseLocator.locator('input, textarea').first();
+                if (await input.count() > 0) {
+                    await expect(input).toHaveValue(value as string, { timeout: 10000 });
+                } else {
+                    // Fallback for readonly fields, spans, or custom divs
+                    await expect(baseLocator).toContainText(value as string, { timeout: 10000 });
+                }
             }
         }
     }

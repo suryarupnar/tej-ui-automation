@@ -117,6 +117,7 @@ export function resolveExpectedTabs(data: ShipmentData): ShipmentTabConfig {
 
 export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
     const map: TabFieldMap = {};
+    const group = TRANSPORT_GROUP[data.details.shipmentType];
 
     // ── 1. Shipment Details tab ───────────────────────────────────────────────
     const shipmentDetailFields: TabFieldEntry[] = [
@@ -138,14 +139,22 @@ export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
         { testId: 'clearanceCompany',   value: data.details.clearanceCompany   ?? 'abc', interaction: 'fill' },
         // 8. Origin Country
         { testId: 'originCountry',      value: data.details.originCountry      ?? '',    interaction: 'combobox' },
-        // 9. Airport of Loading (Origin Airport)
-        { testId: 'originAirport',      value: data.details.originAirport      ?? '',    interaction: 'combobox' },
+        // 9. Airport/Port of Loading
+        { 
+            testId:      group === 'air' ? 'originAirport' : 'originPort', 
+            value:       (group === 'air' ? data.details.originAirport : data.details.originPort) ?? '', 
+            interaction: 'combobox' 
+        },
         // 10. Text Area (Origin Address)
         { testId: 'originAddress',      value: data.details.originAddress      ?? '',    interaction: 'fill' },
         // 11. Destination Country
         { testId: 'destinationCountry', value: data.details.destinationCountry ?? '',    interaction: 'combobox' },
-        // 12. Airport of Discharge (Destination Airport)
-        { testId: 'destinationAirport', value: data.details.destinationAirport ?? '',    interaction: 'combobox' },
+        // 12. Airport/Port of Discharge
+        { 
+            testId:      group === 'air' ? 'destinationAirport' : 'destinationPort', 
+            value:       (group === 'air' ? data.details.destinationAirport : data.details.destinationPort) ?? '', 
+            interaction: 'combobox' 
+        },
         // 13. Text Area (Destination Address)
         { testId: 'destinationAddress', value: data.details.destinationAddress ?? '',    interaction: 'fill' },
     ];
@@ -153,11 +162,10 @@ export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
     map['Shipment Details'] = shipmentDetailFields;
 
     // ── 3. Transport-mode conditional tabs ────────────────────────────────────
-    const group = TRANSPORT_GROUP[data.details.shipmentType];
 
     // ── 2. Cargo & Equipment tab ──────────────────────────────────────────────
     if (data.cargo) {
-        const cargoTabName = group === 'air' ? 'Cargo' : 'Cargo & Equipments';
+        const cargoTabName = (group === 'air' || group === 'sea') ? 'Cargo' : 'Cargo & Equipments';
         
         // Calculation logic for summary totals (matches UI behavior)
         const count = data.cargo.packageCount || 0;
@@ -180,29 +188,53 @@ export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
             { testId: 'tempCargoDetails.0.netWeight',                 value: nw.toString(),    interaction: 'fill' },
             { testId: 'tempCargoDetails.0.commodityType',             value: data.cargo.commodityType || '',interaction: 'combobox' },
             { testId: 'tempCargoDetails.0.shortCargoDescription',     value: data.cargo.description || '',  interaction: 'fill' },
+            { testId: 'tempCargoDetails.0.hsCode',                    value: data.cargo.hsCode || '',       interaction: 'fill' },
+            { testId: 'tempCargoDetails.0.subheading',                value: data.cargo.subheading || '',   interaction: 'fill' },
+        ];
 
-            // Rating
-            { testId: 'tempCargoDetails.0.mawbRateClass',             value: data.cargo.mawbRateClass || '',interaction: 'combobox' },
-            { testId: 'tempCargoDetails.0.tactRate',                  value: data.cargo.tactRate || '',     interaction: 'fill' },
-            { testId: 'tempCargoDetails.0.mawbTotalCharge',           value: data.cargo.mawbTotalCharge || '', interaction: 'fill' },
-            { testId: 'tempCargoDetails.0.mawbCargoDescription',      value: data.cargo.mawbDescription || '', interaction: 'fill' },
+        // 3. Transport-specific Cargo fields
+        if (group === 'air') {
+            cargoFields.push(
+                { testId: 'tempCargoDetails.0.mawbRateClass',             value: data.cargo.mawbRateClass || '',interaction: 'combobox' },
+                { testId: 'tempCargoDetails.0.tactRate',                  value: data.cargo.tactRate || '',     interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.mawbTotalCharge',           value: data.cargo.mawbTotalCharge || '', interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.mawbCargoDescription',      value: data.cargo.mawbDescription || '', interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.hawbRateClass',             value: data.cargo.hawbRateClass || '',interaction: 'combobox' },
+                { testId: 'tempCargoDetails.0.hawbRate',                  value: data.cargo.hawbRate || '',     interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.hawbTotalCharge',           value: data.cargo.hawbTotalCharge || '', interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.slac',                      value: data.cargo.slac || '',         interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.commodityItemNo',           value: data.cargo.commodityItemNo || '', interaction: 'fill' },
+            );
+        } else if (group === 'sea') {
+            cargoFields.push(
+                // General section fields (Matching labels in Sea UI)
+                { testId: 'tempCargoDetails.0.noOfPackages',              value: data.cargo.packageCount?.toString() || '', interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.packageTypeId',             value: data.cargo.packageType || '',              interaction: 'combobox' },
+                { testId: 'tempCargoDetails.0.chargeableWeight',          value: data.cargo.chargeableWeight || '',         interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.declaredValue',             value: data.cargo.declaredValue || '',            interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.currencyId',                 value: data.cargo.currency || '',                 interaction: 'combobox' },
+                
+                // Tracking / ID numbers
+                { testId: 'tempCargoDetails.0.pcinNumber',                value: data.cargo.pcinNumber || '',    interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.mcinNumber',                value: data.cargo.mcinNumber || '',    interaction: 'fill' },
+                { testId: 'tempCargoDetails.0.csnNumber',                 value: data.cargo.csnNumber || '',     interaction: 'fill' },
+            );
+        }
 
-            { testId: 'tempCargoDetails.0.hawbRateClass',             value: data.cargo.hawbRateClass || '',interaction: 'combobox' },
-            { testId: 'tempCargoDetails.0.hawbRate',                  value: data.cargo.hawbRate || '',     interaction: 'fill' },
-            { testId: 'tempCargoDetails.0.hawbTotalCharge',           value: data.cargo.hawbTotalCharge || '', interaction: 'fill' },
-
-            // Other
-            { testId: 'tempCargoDetails.0.slac',                      value: data.cargo.slac || '',         interaction: 'fill' },
-            { testId: 'tempCargoDetails.0.commodityItemNo',           value: data.cargo.commodityItemNo || '', interaction: 'fill' },
+        // Always add Item No and Sub Item No at the end
+        cargoFields.push(
             { testId: 'tempCargoDetails.0.itemNo',                    value: data.cargo.itemNo || '',       interaction: 'fill' },
             { testId: 'tempCargoDetails.0.subItemNo',                 value: data.cargo.subItemNo || '',    interaction: 'fill' },
+        );
 
-            // Summary Totals (Expected values after UI calculation)
+        // Summary Totals (Expected values after UI calculation)
+        cargoFields.push(
             { testId: 'grossWeight',      value: (count * gw).toString(),  interaction: 'readonly' },
             { testId: 'netWeight',        value: nw.toString(),            interaction: 'readonly' },
             { testId: 'grossVolume',      value: (count * volPerUnit).toString(), interaction: 'readonly' },
             { testId: 'totalPackages',    value: count.toString(),         interaction: 'readonly' },
-        ];
+        );
+
         map[cargoTabName] = cargoFields.filter(f => !!f.value);
     }
 

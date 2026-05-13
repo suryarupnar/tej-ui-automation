@@ -31,10 +31,14 @@ export interface ShipmentDetailsData {
     originCountry?:      string;
     /** UI: "Airport of Loading" autocomplete — testId: originAirport (full label e.g. 'DXB - Dubai Intl') */
     originAirport?:      string;
+    /** UI: "Port of Loading" autocomplete — testId: originPort (full label e.g. 'INMUN - Mundra India') */
+    originPort?:         string;
     /** UI: "Destination Country" autocomplete — testId: destinationCountry */
     destinationCountry?: string;
     /** UI: "Airport of Discharge" autocomplete — testId: destinationAirport (full label e.g. 'LHR - Heathrow') */
     destinationAirport?: string;
+    /** UI: "Port of Discharge" autocomplete — testId: destinationPort (full label e.g. 'INPBD - Porbandar India') */
+    destinationPort?:    string;
     /** UI: "Clearance Company" text input — testId: clearanceCompany */
     clearanceCompany?:   string;
     /** UI: "CFS Name" text input — testId: cfsName */

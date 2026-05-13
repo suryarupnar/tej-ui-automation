@@ -26,10 +26,17 @@ export class CargoPage extends BasePage {
 
         // 4. Fill fields inside the modal
         for (const { testId, value, interaction } of cargoFields) {
-            // Handle escaping dots in IDs for CSS selectors
             const escapedId = testId.replace(/\./g, '\\.');
             const fieldLocator = modal.getByTestId(testId).or(modal.locator(`#${escapedId}`)).first();
             
+            // Wait for field to be attached (buffer for animations/modals)
+            await fieldLocator.waitFor({ state: 'attached', timeout: 2000 }).catch(() => {});
+            
+            if (await fieldLocator.count() === 0) {
+                console.log(`      - Cargo field not found, skipping: ${testId}`);
+                continue;
+            }
+
             if (interaction === 'combobox') {
                 await this.selectByLocator(fieldLocator, value as string | string[]);
             } else {
@@ -58,10 +65,13 @@ export class CargoPage extends BasePage {
     async verifyCargoDetails(fields: TabFieldEntry[]) {
         console.log('\n      [Cargo Tab Verification]');
         let checkedCount = 0;
+        const activeTabPanel = this.page.getByRole('tabpanel');
+        
+        // Wait for loading indicator to disappear if present
+        const loader = activeTabPanel.getByRole('progressbar');
+        await expect(loader).not.toBeVisible({ timeout: 15000 }).catch(() => {});
 
         for (const { testId, value } of fields) {
-            // We use a flexible locator scoped to the active tab panel
-            const activeTabPanel = this.page.getByRole('tabpanel');
             const escapedId = testId.replace(/\./g, '\\.');
             const locator = activeTabPanel.getByTestId(testId).or(activeTabPanel.locator(`#${escapedId}`)).first();
             

@@ -34,9 +34,16 @@ export interface CargoData {
   itemNo?: string;
   subItemNo?: string;
 
+  // Sea Specific
+  declaredValue?: string;
+  pcinNumber?: string;
+  mcinNumber?: string;
+  csnNumber?: string;
+
   // Legacy/Other
   chargeableWeight?: string;
   volume?: string;
   packageType?: string;
+  currency?: string;
   marksAndNumbers?: string;
 }

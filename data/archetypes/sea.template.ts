@@ -16,12 +16,51 @@ export const seaBaseTemplate: ShipmentData = {
     user:     'Michael Reed',
     clearanceJobNumber: '',
     secondaryServices:  [],
+
+    // ── Shipment Details tab – post-creation editable fields ───────────────
+    lineOfBusiness:  'Freight Forwarding',
+    shippingTerms:   'FCA',
+    category:        'Dry Bulk',          // shipmentTypeId dropdown
+    nominatedBy:     'Agent',             // nominationType dropdown
+    tags:            [],
+    client:          'ATMAN PHARMACEUTICALS',
+
+    // Address section
+    originCountry:      'India',
+    originPort:         'INMUN - Mundra India',
+    originAddress:      'Sea Origin Address',
+    destinationCountry: 'India',
+    destinationPort:    'INPBD - Porbandar India',
+    destinationAddress: 'Sea Destination Address',
   },
   cargo: {
-    grossWeight:  '100',
-    packageCount: 1,
-    packageType:  'Box',
-    commodityType: 'General Cargo',
+    // First dimension row
+    packageCount: 1000,
+    length:       '1000',
+    width:        '1',
+    height:       '1000',
+    grossWeight:  '2',
+
+    // Calculated / Summary
+    netWeight:    '2',
+    grossVolume:  '0.000',
+    commodityType: 'Cereals',
+    description:   'Fragile',
+    hsCode:        '123',
+    subheading:    'ABC',
+
+    // Sea Specific (visible in UI screenshot)
+    packageType:      'Box',
+    currency:         'USD - US Dollar',
+    chargeableWeight: '2.000',
+    declaredValue:    '5000',
+    pcinNumber:       'PCIN-SEA-001',
+    mcinNumber:       'MCIN-SEA-001',
+    csnNumber:        'CSN-SEA-001',
+
+    // Other
+    itemNo: '1',
+    subItemNo: '2',
   },
   // ── MBL tab field data ───────────────────────────────────────────────────
   // Update keys to match actual data-testid attributes in the MBL tab.
