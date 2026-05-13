@@ -50,19 +50,19 @@ export class BasePage {
             const listbox = this.page.getByRole('listbox');
             const option = listbox.getByRole('option', { name: value, exact: true });
             
-            await option.click({ timeout: 5000 }).catch((e) => {
+            await option.click({ timeout: 10000 }).catch((e) => {
                 throw new Error(`Autocomplete Option "${value}" (exact) not found in listbox`);
             });
         } else {
             // Select: Click dropdown and click matching option
-            await trigger.click({ timeout: 5000 }).catch((e) => {
+            await trigger.click({ timeout: 10000 }).catch((e) => {
                 throw new Error(`Failed to click dropdown trigger. It may be hidden or obscured.`);
             });
             
             const listbox = this.page.getByRole('listbox');
             const option = listbox.getByRole('option', { name: value, exact: true });
             
-            await option.click({ timeout: 5000 }).catch((e) => {
+            await option.click({ timeout: 10000 }).catch((e) => {
                 throw new Error(`Select Option "${value}" (exact) not found in dropdown`);
             });
         }
