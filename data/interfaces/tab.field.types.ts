@@ -10,7 +10,8 @@ export type TabFieldInteraction =
     | 'combobox'    // MUI Autocomplete             → selectByTestId then inputValue()
     | 'text'        // read-only display element    → textContent() only (no sendKeys)
     | 'readonly'    // disabled input / combobox    → inputValue() only (no sendKeys)
-    | 'datepicker'; // MUI DatePicker (spinbuttons)  → click Edit Dates, fill spinbuttons
+    | 'datepicker'  // MUI DatePicker (spinbuttons)  → click Edit Dates, fill spinbuttons
+    | 'button';     // Named button click (e.g. 'Copy Consignee') → getByRole('button', { name: value })
 
 export interface TabFieldEntry {
     /** data-testid (or wrapper testid) of the target element */

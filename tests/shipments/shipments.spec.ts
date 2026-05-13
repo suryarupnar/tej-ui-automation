@@ -34,8 +34,8 @@ async function runScenario(
     data:       ShipmentData,
     absentTabs: string[] = [],
 ) {
-    // These end-to-end multi-tab flows are huge and require more than 60s
-    test.setTimeout(120000);
+    // Timeout is set per describe block (180s) and globally in playwright.config.ts.
+    // Do NOT override it here — it would reduce the timeout for every scenario.
     
     let serialNo = '';
 
@@ -109,8 +109,7 @@ async function openAndVerifyExistingShipment(
 // Conditional     : MAWB (always) | HAWB (only with 'MAWB & HAWB')
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Air Inbound', () => {
-    // Large forms with 50+ sequential fields take longer than the default 60s to fill reliably
+test.describe('Air Inbound @air @inbound', () => {
     test.setTimeout(180000);
 
 
@@ -134,7 +133,7 @@ test.describe('Air Inbound', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Air Cross Trade', () => {
+test.describe('Air Cross Trade @air @crosstrade', () => {
     test.setTimeout(180000);
 
     test('MAWB only → MAWB tab present, HAWB absent',
@@ -157,7 +156,30 @@ test.describe('Air Cross Trade', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Air Outbound', () => {
+test.describe('Air Domestic @air @domestic', () => {
+    test.setTimeout(180000);
+
+    test('MAWB only → MAWB tab present, HAWB absent',
+        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
+            await runScenario(
+                { dashboardPage, shipmentsPage, shipmentDetailsPage },
+                createAirShipment({ details: { shipmentType: 'Air Domestic', shipmentMode: 'MAWB Only' } }),
+                ['HAWB'],
+            );
+        });
+
+    test('MAWB & HAWB → both MAWB and HAWB tabs present',
+        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
+            await runScenario(
+                { dashboardPage, shipmentsPage, shipmentDetailsPage },
+                createAirShipment({ details: { shipmentType: 'Air Domestic', shipmentMode: 'MAWB & HAWB' } }),
+            );
+        });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('Air Outbound @air @outbound', () => {
     test.setTimeout(180000);
 
     test('MAWB only → MAWB tab present, HAWB absent',
@@ -185,7 +207,7 @@ test.describe('Air Outbound', () => {
 // Conditional     : Waybill | Trucking (always, for every Land type)
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Land Cross Trade', () => {
+test.describe('Land Cross Trade @land @crosstrade', () => {
     test.setTimeout(180000);
 
 
@@ -200,7 +222,8 @@ test.describe('Land Cross Trade', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Land Domestic', () => {
+test.describe('Land Domestic @land @domestic', () => {
+    test.setTimeout(180000);
 
 
     test('Waybill → Waybill & Trucking tabs present',
@@ -214,7 +237,8 @@ test.describe('Land Domestic', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Land Inbound', () => {
+test.describe('Land Inbound @land @inbound', () => {
+    test.setTimeout(180000);
 
 
     test('Waybill → Waybill & Trucking tabs present',
@@ -228,7 +252,8 @@ test.describe('Land Inbound', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Land Outbound', () => {
+test.describe('Land Outbound @land @outbound', () => {
+    test.setTimeout(180000);
 
 
     test('Waybill → Waybill & Trucking tabs present',
@@ -244,14 +269,14 @@ test.describe('Land Outbound', () => {
 // ██████████████████████  S E A  ██████████████████████████████████████████████
 //
 // Universal tabs  : Shipment Details | Cargo & Equipment | Cost & Revenues
-// Conditional     : MBL (always) | HBL (only with 'MB/L & HB/L') | Trucking (always)
+// Conditional     : MBL (always) | HBL (only with 'MB/L & HB/L')
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.skip('Sea Cross Trade', () => {
+test.describe('Sea Cross Trade @sea @crosstrade', () => {
     test.setTimeout(180000);
 
 
-    test('MB/L only → MBL & Trucking present, HBL absent',
+    test('MB/L only → MBL present, HBL absent',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -260,7 +285,7 @@ test.skip('Sea Cross Trade', () => {
             );
         });
 
-    test('MB/L & HB/L → MBL, HBL & Trucking all present',
+    test('MB/L & HB/L → MBL and HBL both present',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -271,11 +296,11 @@ test.skip('Sea Cross Trade', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.skip('Sea Domestic', () => {
+test.describe('Sea Domestic @sea @domestic', () => {
     test.setTimeout(180000);
 
 
-    test('MB/L only → MBL & Trucking present, HBL absent',
+    test('MB/L only → MBL present, HBL absent',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -284,7 +309,7 @@ test.skip('Sea Domestic', () => {
             );
         });
 
-    test('MB/L & HB/L → MBL, HBL & Trucking all present',
+    test('MB/L & HB/L → MBL and HBL both present',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -295,11 +320,11 @@ test.skip('Sea Domestic', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.skip('Sea Inbound', () => {
+test.describe('Sea Inbound @sea @inbound', () => {
     test.setTimeout(180000);
 
 
-    test('MB/L only → MBL & Trucking present, HBL absent',
+    test('MB/L only → MBL present, HBL absent',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -308,7 +333,7 @@ test.skip('Sea Inbound', () => {
             );
         });
 
-    test('MB/L & HB/L → MBL, HBL & Trucking all present',
+    test('MB/L & HB/L → MBL and HBL both present',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -319,11 +344,11 @@ test.skip('Sea Inbound', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.skip('Sea Outbound', () => {
+test.describe('Sea Outbound @sea @outbound', () => {
     test.setTimeout(180000);
 
 
-    test('MB/L only → MBL & Trucking present, HBL absent',
+    test('MB/L only → MBL present, HBL absent',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },
@@ -332,7 +357,7 @@ test.skip('Sea Outbound', () => {
             );
         });
 
-    test('MB/L & HB/L → MBL, HBL & Trucking all present',
+    test('MB/L & HB/L → MBL and HBL both present',
         async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
             await runScenario(
                 { dashboardPage, shipmentsPage, shipmentDetailsPage },

@@ -3,7 +3,7 @@ import { ShipmentData } from '../interfaces/master.types';
 // Default Sea archetype – used by all Sea shipment combinations.
 // Tests override `shipmentType` and `shipmentMode` as needed.
 //
-// `mbl` / `hbl` / `trucking` keys follow the convention:
+// `mbl` / `hbl` keys follow the convention:
 //   key = data-testid on the detail page tab
 //   value = text to sendKeys AND the expected getText result
 export const seaBaseTemplate: ShipmentData = {
@@ -63,22 +63,98 @@ export const seaBaseTemplate: ShipmentData = {
     subItemNo: '2',
   },
   // ── MBL tab field data ───────────────────────────────────────────────────
-  // Update keys to match actual data-testid attributes in the MBL tab.
+  // Keys = data-testid (or role/label-based ID) of the element in the MBL tab.
+  // Values = string to fill / option to select.
+  //
+  // Combobox fields (data-testid with getByTestId):
+  //   mbl.shippingLine | mbl.coLoader | mbl.agent
+  //   mbl.originOfGoods | mbl.receiptLocation | mbl.deliveryLocation
+  //
+  // Datepicker fields (wrapper testid suffix "-wrapper"):
+  //   mbl.inwardDate-wrapper
+  //   mbl.invoiceSbRows.0.invoiceDate-wrapper
+  //   mbl.invoiceSbRows.0.sbDate-wrapper
   mbl: {
-    'mbl-serial-number':     'MBL-SEA-001',
-    'mbl-vessel-name':       'Ever Given',
-    'mbl-port-of-loading':   'Jebel Ali',
-    'mbl-port-of-discharge': 'Felixstowe',
+    // ── Header ─────────────────────────────────────────────────────────────
+    'mbl.bookingNo':              '847',
+    'mbl.mblNumber':              '3883',
+
+    // ── Parties ────────────────────────────────────────────────────────────
+    'mbl.shipperName':            'abc',
+    'mbl.shipperFullAddress':     'acswc',
+    'mbl.consigneeName':          'abca',
+    'mbl.consigneeFullAddress':   'bcajhc',
+
+    // Click 'Copy Consignee' → auto-fills Notify Party from Consignee
+    'mbl.__copyConsignee':        'Copy Consignee',   // interaction: button
+
+    'mbl.forwarderName':          'abc',
+    'mbl.forwarderFullAddress':   'abc',
+    'mbl.contractPartyName':      'abc',
+    'mbl.contractPartyFullAddress': 'asc',
+    'mbl.freightPayerName':       'abc',
+    'mbl.freightPayerFullAddress': 'abc',
+
+    // ── Carrier / Agent (MUI comboboxes) ───────────────────────────────────
+    'mbl.shippingLine':           'mahesh transport',
+    'mbl.coLoader':               'mahesh transport',
+    'mbl.agent':                  'mahesh transport',
+
+    // ── Voyage Details ──────────────────────────────────────────────────────
+    'mbl.vessel':                 'Abc',
+    'mbl.voyage':                 'abc',
+    'mbl.preCarriageBy':          'abc',
+
+    // ── Locations (combobox + free-text override) ───────────────────────────
+    'mbl.originOfGoods':          'Tahuna',
+    'mbl.receiptLocation':        'Bucksport',
+    'mbl.deliveryLocation':       'Friendship',
+    'mbl.originTerminal':         'abc',
+    'mbl.destinationTerminal':    'abc',
+
+    // ── Cargo ───────────────────────────────────────────────────────────────
+    'mbl.cargoDescription':       'abc',
+    'mbl.marksAndNumbers':        'abc',
+
+    // ── Import Details ──────────────────────────────────────────────────────
+    'mbl.manifestNo':             '876',
+    'mbl.cfsName':                'ahbc',
+
+    // ── Invoice / SB Row ────────────────────────────────────────────────────
+    'mbl.invoiceSbRows.0.invoiceNo':                '8348493',
+    'mbl.invoiceSbRows.0.invoiceDate-wrapper':       '13/05/2026',   // datepicker
+    'mbl.invoiceSbRows.0.sbNo':                      '83',
+    'mbl.invoiceSbRows.0.sbDate-wrapper':            '13/05/2026',   // datepicker
   },
   // ── HBL tab field data (only used when mode = 'MB/L & HB/L') ────────────
+  // Combobox fields: hbl.originOfGoods | hbl.receiptLocation |
+  //                  hbl.deliveryLocation | hbl.issueLocation
+  // Datepicker:      hbl.issuedOn-wrapper
   hbl: {
-    'hbl-serial-number':     'HBL-SEA-001',
-    'hbl-port-of-loading':   'Jebel Ali',
-    'hbl-port-of-discharge': 'Felixstowe',
-  },
-  // ── Trucking tab field data ──────────────────────────────────────────────
-  trucking: {
-    'trucking-vehicle-number': 'TRK-SEA-001',
-    'trucking-driver-name':    'Mohammed Al Rashid',
+    // ── Header ─────────────────────────────────────────────────────────────
+    'hbl.hblNumber':              'hbl2934',
+
+    // ── Parties ────────────────────────────────────────────────────────────
+    'hbl.shipperName':            'ABC',
+    'hbl.consigneeName':          'abc',
+
+    // Click 'Copy Consignee' → auto-fills Notify Party from Consignee
+    'hbl.__copyConsignee':        'Copy Consignee',   // interaction: button
+
+    // ── Voyage Details ──────────────────────────────────────────────────────
+    'hbl.preCarriageBy':          'abc',
+
+    // ── Locations (MUI comboboxes) ──────────────────────────────────────────
+    'hbl.originOfGoods':          'Friendship',
+    'hbl.receiptLocation':        'Friendship',
+    'hbl.deliveryLocation':       'Tahuna',
+
+    // ── Cargo ───────────────────────────────────────────────────────────────
+    'hbl.cargoDescription':       'abc',
+    'hbl.marksAndNumbers':        'abc',
+
+    // ── Issue Details ───────────────────────────────────────────────────────
+    'hbl.issueLocation':          'Friendship',
+    'hbl.issuedOn-wrapper':       '13/05/2026',   // datepicker
   },
 };

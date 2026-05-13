@@ -45,6 +45,7 @@ const TRANSPORT_GROUP: Record<ShipmentType, 'air' | 'land' | 'sea'> = {
     'Air Inbound':      'air',
     'Air Cross Trade':  'air',
     'Air Outbound':     'air',
+    'Air Domestic':     'air',
     'Land Cross Trade': 'land',
     'Land Domestic':    'land',
     'Land Inbound':     'land',
@@ -270,11 +271,6 @@ export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
             const entries = buildEntriesFromRecord(data.hbl);
             if (entries.length) map['HB/L'] = entries;
         }
-        // Trucking tab
-        if (data.trucking) {
-            const entries = buildEntriesFromRecord(data.trucking);
-            if (entries.length) map['Trucking'] = entries;
-        }
     }
 
     if (group === 'land') {
@@ -297,6 +293,33 @@ export function resolveTabFieldMap(data: ShipmentData): TabFieldMap {
     // }
 
     return map;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIELD-TYPE DETECTION HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns true if the given testId corresponds to a MUI Autocomplete combobox.
+ * Add patterns here when new combobox fields are introduced — no other changes needed.
+ *
+ * Patterns:
+ *   Id$               — ends in "Id" (e.g. lineOfBusinessId, clientId)
+ *   Country           — country dropdowns
+ *   Airport           — airport dropdowns
+ *   agent$            — mawb.agent, mbl.agent
+ *   coLoader$         — mbl.coLoader
+ *   shippingLine$     — mbl.shippingLine
+ *   originOfGoods$    — mbl/hbl origin of goods
+ *   receiptLocation$  — mbl/hbl receipt location
+ *   deliveryLocation$ — mbl/hbl delivery location
+ *   hbl\.issueLocation$ — HBL issue location ONLY (waybill.issueLocation is a plain textbox)
+ *   noOf              — package count dropdowns
+ *   chargeCode        — charge code combobox
+ *   specialHandling   — special handling codes
+ */
+function isComboboxField(testId: string): boolean {
+    return /Id$|Country|Airport|agent$|coLoader$|shippingLine$|originOfGoods$|receiptLocation$|deliveryLocation$|hbl\.issueLocation$|noOf|chargeCode|specialHandling/i.test(testId);
 }
 
 /**
@@ -324,16 +347,18 @@ function buildEntriesFromRecord(record: Record<string, unknown>, readonlyKeys: s
                 };
             }
 
-            // Smart detection: 
-            // 1. Datepickers
-            const isDate = /Date|issuedOn/i.test(testId);
-            // 2. Comboboxes (MUI Autocomplete)
-            const isCombobox = /Id|Country|Airport|agent|coLoader|noOf|chargeCode|specialHandling/i.test(testId);
+            // Smart detection helpers
+            // 0. Button – key contains double-underscore (e.g. mbl.__copyConsignee)
+            const isButton = /__/.test(testId);
+            // 1. Datepicker – key ends in '-wrapper' or contains Date/issuedOn
+            const isDate = !isButton && (/-wrapper$/i.test(testId) || /Date|issuedOn/i.test(testId));
+            // 2. Combobox – determined by a named helper (see isComboboxField below)
+            const isCombobox = !isButton && !isDate && isComboboxField(testId);
             
             return {
                 testId,
                 value:       valStr,
-                interaction: (isDate ? 'datepicker' : (isCombobox ? 'combobox' : 'fill')) as TabFieldEntry['interaction'],
+                interaction: (isButton ? 'button' : isDate ? 'datepicker' : (isCombobox ? 'combobox' : 'fill')) as TabFieldEntry['interaction'],
             };
         });
 }

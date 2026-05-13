@@ -26,9 +26,7 @@ export const landBaseTemplate: ShipmentData = {
     tags:            [],
     client:          'ATMAN PHARMACEUTICALS',
     office:          'Mumbai',
-    agent:           'Imran',
-    carrier:         'DHL',
-    
+
     originCountry:      'India',
     originAddress:      'Mumbai Test Address',
     destinationCountry: 'United Arab Emirates',

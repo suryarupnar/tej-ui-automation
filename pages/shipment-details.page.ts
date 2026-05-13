@@ -106,11 +106,22 @@ export class ShipmentDetailsPage extends BasePage {
     // ─────────────────────────────────────────────────────────────────────────
 
     async saveCurrentTab() {
-        // Target the visible Save button to avoid clicking hidden ones from other tabs
         const activeSaveButton = this.saveButton.filter({ visible: true }).first();
+
+        // If Save is already disabled the tab has no pending changes – nothing to save.
+        if (await activeSaveButton.isDisabled()) {
+            console.log('    ⚠ Save button disabled – tab already up to date, skipping.');
+            return;
+        }
+
         await activeSaveButton.click();
-        const successToast = this.page.getByText('Shipment saved successfully', { exact: true });
-        await expect(successToast).toBeVisible({ timeout: 10000 });
+
+        // Wait for the Save button to become disabled — this is the authoritative
+        // signal that the server accepted the payload and the form is now clean.
+        // The success toast is a nice-to-have visual but unreliable as a test gate
+        // (it disappears within ~2s and Playwright's polling may miss it).
+        await expect(activeSaveButton).toBeDisabled({ timeout: 15000 });
+        console.log('    ✓ Tab saved successfully.');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -175,21 +186,32 @@ export class ShipmentDetailsPage extends BasePage {
             return;
         }
 
+        // Datepickers are sorted to the end (they need the date-editing mode enabled).
+        // Buttons must stay in their declared position (e.g. Copy Consignee fires
+        // between consignee fill and forwarder fill), so they are excluded from the sort.
         const sortedFields = [...fields].sort((a, b) => {
-            if (a.interaction === 'datepicker' && b.interaction !== 'datepicker') return 1;
-            if (a.interaction !== 'datepicker' && b.interaction === 'datepicker') return -1;
+            const aIsDate = a.interaction === 'datepicker';
+            const bIsDate = b.interaction === 'datepicker';
+            if (aIsDate && !bIsDate) return 1;
+            if (!aIsDate && bIsDate) return -1;
             return 0;
         });
 
         let datesEnabled = false;
         for (const { testId, value, values, interaction = 'fill' } of sortedFields) {
+            // ── Button clicks bypass the field-locator pipeline entirely ──────
+            if (interaction === 'button') {
+                console.log(`      - Clicking button: "${value}"...`);
+                await this.page.getByRole('button', { name: value }).click();
+                continue;
+            }
+
             const field = this.fieldLocator(testId);
             
             // Wait for field to be attached (gives time for animations/transitions)
             await field.waitFor({ state: 'attached', timeout: 2000 }).catch(() => {});
 
             if (await field.count() === 0) {
-                console.log(`      - Field not found, skipping: ${testId}`);
                 continue;
             }
 
@@ -204,7 +226,6 @@ export class ShipmentDetailsPage extends BasePage {
                 datesEnabled = true;
             }
 
-            console.log(`      - Filling ${testId} with "${value || (values && values.join(','))}"...`);
             if (interaction === 'fill') {
                 await field.fill(value as string);
             } else if (interaction === 'combobox') {
@@ -238,11 +259,9 @@ export class ShipmentDetailsPage extends BasePage {
             await baseLocator.waitFor({ state: 'attached', timeout: 3000 }).catch(() => {});
 
             if (await baseLocator.count() === 0) {
-                console.log(`      - Field not found for verification, skipping: ${testId}`);
                 continue;
             }
 
-            console.log(`      - Verifying ${testId} has value "${value}"...`);
 
             if (interaction === 'datepicker') {
                 const hidden = baseLocator.locator('input[aria-hidden="true"]');

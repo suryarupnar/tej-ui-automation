@@ -21,19 +21,21 @@ export class CargoPage extends BasePage {
         const modal = this.page.getByRole('dialog').filter({ hasText: 'New Cargo' });
         await expect(modal).toBeVisible();
 
-        // 3. Setup dimensions in modal
+        // 3. Setup dimensions in modal — click triggers a re-render, so wait
+        //    for the first dimension input to be stable before filling anything.
         await modal.getByRole('button', { name: 'Add Dimensions' }).click();
+        const firstDimField = modal.locator('[id^="tempCargoDetails.0.dimensions.0"]').first();
+        await firstDimField.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
 
         // 4. Fill fields inside the modal
         for (const { testId, value, interaction } of cargoFields) {
             const escapedId = testId.replace(/\./g, '\\.');
             const fieldLocator = modal.getByTestId(testId).or(modal.locator(`#${escapedId}`)).first();
-            
-            // Wait for field to be attached (buffer for animations/modals)
-            await fieldLocator.waitFor({ state: 'attached', timeout: 2000 }).catch(() => {});
-            
-            if (await fieldLocator.count() === 0) {
-                console.log(`      - Cargo field not found, skipping: ${testId}`);
+
+            // Wait for field to be attached and stable
+            await fieldLocator.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+
+            if (await fieldLocator.count() === 0 || !(await fieldLocator.isVisible().catch(() => false))) {
                 continue;
             }
 
@@ -44,9 +46,11 @@ export class CargoPage extends BasePage {
             }
         }
 
-        // 5. Trigger calculation AFTER all fields are populated
+        // 5. Trigger calculation AFTER all fields are populated, then wait for it
+        //    to apply — web-first assertion replaces the brittle waitForTimeout.
         await modal.getByRole('button', { name: 'Calculate Totals' }).click();
-        await this.page.waitForTimeout(1000);
+        const grossWeightField = modal.getByRole('spinbutton', { name: 'Gross Weight' });
+        await expect(grossWeightField).not.toHaveValue('', { timeout: 5000 }).catch(() => {});
 
         // 6. Save the modal
         // Using a robust role-based locator instead of a brittle class
@@ -63,7 +67,6 @@ export class CargoPage extends BasePage {
      * Verifies the Cargo tab fields using a data-driven loop.
      */
     async verifyCargoDetails(fields: TabFieldEntry[]) {
-        console.log('\n      [Cargo Tab Verification]');
         let checkedCount = 0;
         const activeTabPanel = this.page.getByRole('tabpanel');
         

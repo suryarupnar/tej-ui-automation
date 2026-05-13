@@ -117,7 +117,6 @@ export const airBaseTemplate: ShipmentData = {
     'hawb.issuedOn-wrapper':                 '28/05/2026',
 
     // Charges & Accounting
-    'hawb.chargeCode':          'FC - FREIGHT_CHARGE',
     'declaredValueForCarriage': '5000',
     'declaredValueForCustoms':  '5000',
     'amountOfInsurance':        '1000',

@@ -6,6 +6,7 @@ export type ShipmentType =
   | 'Air Inbound'
   | 'Air Cross Trade'
   | 'Air Outbound'
+  | 'Air Domestic'
   // Land
   | 'Land Cross Trade'
   | 'Land Domestic'
