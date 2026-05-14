@@ -2,12 +2,12 @@ import { test as base, expect } from "@playwright/test"
 import { LoginPage } from "../pages/login.page"
 import { DashboardPage } from "../pages/dashboard.page"
 import { ShipmentsPage } from "../pages/shipments.page"
-import { ShipmentDetailsPage } from "../pages/shipment-details.page"
+import { ShipmentEditPage } from "../pages/shipment-edit.page"
 type Fixtures = {
     loginPage: LoginPage,
     shipmentsPage: ShipmentsPage,
     dashboardPage: DashboardPage,
-    shipmentDetailsPage: ShipmentDetailsPage
+    shipmentEditPage: ShipmentEditPage
 }
 
 export const test = base.extend<Fixtures>({
@@ -24,8 +24,8 @@ export const test = base.extend<Fixtures>({
         await use(new ShipmentsPage(page))
     },
 
-    shipmentDetailsPage: async ({ page }, use) => {
-        await use(new ShipmentDetailsPage(page))
+    shipmentEditPage: async ({ page }, use) => {
+        await use(new ShipmentEditPage(page))
     }
 
 })

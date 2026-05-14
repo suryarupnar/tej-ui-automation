@@ -1,367 +1,105 @@
-import { test }           from '../../fixtures';
-import { ShipmentData }   from '../../data/interfaces/master.types';
-import { DashboardPage }  from '../../pages/dashboard.page';
-import { ShipmentsPage }  from '../../pages/shipments.page';
-import { ShipmentDetailsPage } from '../../pages/shipment-details.page';
-import { resolveTabFieldMap } from '../../data/shipment.factory';
-import {
-    createAirShipment,
-    createLandShipment,
-    createSeaShipment,
-} from '../../data/shipment.factory';
+import { test, expect } from "../../fixtures";
+import { shipmentDetailsData, cargoData, mawbData, hawbData, mblData, hblData, waybillData } from "../../data/shipment.data";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SHARED HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
+const scenarios = [
+    // Air Scenarios
+    { type: 'Air Inbound',     mode: 'MAWB Only',   tags: '@air @inbound' },
+    { type: 'Air Inbound',     mode: 'MAWB & HAWB', tags: '@air @inbound @hawb' },
+    { type: 'Air Outbound',    mode: 'MAWB Only',   tags: '@air @outbound' },
+    { type: 'Air Outbound',    mode: 'MAWB & HAWB', tags: '@air @outbound @hawb' },
+    { type: 'Air Cross Trade', mode: 'MAWB Only',   tags: '@air @crosstrade' },
+    { type: 'Air Cross Trade', mode: 'MAWB & HAWB', tags: '@air @crosstrade @hawb' },
+    { type: 'Air Domestic',    mode: 'MAWB Only',   tags: '@air @domestic' },
+    { type: 'Air Domestic',    mode: 'MAWB & HAWB', tags: '@air @domestic @hawb' },
 
-type Pages = { 
-    dashboardPage: DashboardPage; 
-    shipmentsPage: ShipmentsPage; 
-    shipmentDetailsPage: ShipmentDetailsPage; 
-};
+    // Land Scenarios
+    { type: 'Land Inbound',     mode: 'Waybill', tags: '@land @inbound' },
+    { type: 'Land Outbound',    mode: 'Waybill', tags: '@land @outbound' },
+    { type: 'Land Cross Trade', mode: 'Waybill', tags: '@land @crosstrade' },
+    { type: 'Land Domestic',    mode: 'Waybill', tags: '@land @domestic' },
 
-/**
- * SCENARIO – Three named test.step() phases so Playwright's HTML report
- * shows exactly where a failure occurred:
- *
- *   Step 1 │ Create Shipment    – navigate, fill creation form, generate ID
- *   Step 2 │ Assert Tabs        – verify expected tabs visible / absent ones gone
- *   Step 3 │ Fill & Save Tabs   – fill every detail tab field and save
- *   Step 4 │ Validate Fields    – re-open each tab and assert persisted values
- */
-async function runScenario(
-    { dashboardPage, shipmentsPage, shipmentDetailsPage }: Pages,
-    data:       ShipmentData,
-    absentTabs: string[] = [],
-) {
-    // Timeout is set per describe block (180s) and globally in playwright.config.ts.
-    // Do NOT override it here — it would reduce the timeout for every scenario.
-    
-    let serialNo = '';
+    // Sea Scenarios
+    { type: 'Sea Inbound',     mode: 'MB/L Only',   tags: '@sea @inbound' },
+    { type: 'Sea Inbound',     mode: 'MB/L & HB/L', tags: '@sea @inbound @hbl' },
+    { type: 'Sea Outbound',    mode: 'MB/L Only',   tags: '@sea @outbound' },
+    { type: 'Sea Outbound',    mode: 'MB/L & HB/L', tags: '@sea @outbound @hbl' },
+    { type: 'Sea Cross Trade', mode: 'MB/L Only',   tags: '@sea @crosstrade' },
+    { type: 'Sea Cross Trade', mode: 'MB/L & HB/L', tags: '@sea @crosstrade @hbl' },
+    { type: 'Sea Domestic',    mode: 'MB/L Only',   tags: '@sea @domestic' },
+    { type: 'Sea Domestic',    mode: 'MB/L & HB/L', tags: '@sea @domestic @hbl' },
+];
 
-    // ── Step 1: Create Shipment ───────────────────────────────────────────────
-    await test.step('Step 1 │ Create Shipment', async () => {
-        await shipmentsPage.goto();
-        await shipmentsPage.createNewRegularShipment(data);
-        serialNo = await shipmentDetailsPage.generateAndCaptureId();
-        console.log('\n  ▶ Shipment created:', serialNo || '(not captured)');
-    });
+test.describe('Full Shipment Automation Suite (20 Combinations)', () => {
 
-    // ── Step 2: Assert Tabs ───────────────────────────────────────────────────
-    await test.step('Step 2 │ Assert Tabs', async () => {
-        // await shipmentDetailsPage.expectDetailTabs(data);
-        // if (absentTabs.length) {
-        //     await shipmentDetailsPage.expectTabsAbsent(absentTabs);
-        // }
-    });
+    for (const scenario of scenarios) {
+        test(`${scenario.type} - ${scenario.mode} ${scenario.tags}`, async ({ shipmentsPage, shipmentEditPage }) => {
+            
+            const fullData = { 
+                details: {
+                    ...shipmentDetailsData, 
+                    shipmentType: scenario.type, 
+                    shipmentMode: scenario.mode 
+                },
+                cargo: cargoData,
+                mawb: mawbData,
+                hawb: hawbData,
+                mbl: mblData,
+                hbl: hblData,
+                waybill: waybillData
+            };
 
-    // ── Step 3: Fill & Save All Tabs ─────────────────────────────────────────
-    await test.step('Step 3 │ Fill & Save All Tabs', async () => {
-        await shipmentDetailsPage.fillAllTabs(data);
-    });
+            await test.step('Step 1: Create Shipment', async () => {
+                await shipmentsPage.goto();
+                await shipmentsPage.createNewRegularShipment(fullData);
+            }); 
 
-    // ── Step 4: Re-open from List ───────────────────────────────────────────
-    // await test.step('Step 4 │ Re-open from List', async () => {
-    //     if (!serialNo) {
-    //         console.warn('  ⚠ No serial number captured, skipping list search.');
-    //         return;
-    //     }
-    //     await shipmentsPage.goto();
-    //     await shipmentsPage.openShipmentBySerialNo(serialNo);
-    // });
+            let shipmentNum: string = '';
+            await test.step('Step 2: Capture Shipment Number', async () => {
+                shipmentNum = await shipmentEditPage.generateNum();
+            });
 
-    // // ── Step 5: Validate Persisted Fields ────────────────────────────────────
-    // await test.step('Step 5 │ Validate Fields', async () => {
-    //     await shipmentDetailsPage.validateAllTabs(data);
-    // });
-}
+            await test.step('Step 3: Fill All Tabs', async () => {
+                // Fill basic details
+                await shipmentEditPage.shipmentFill(fullData.details);
 
-/**
- * SCENARIO B – Open an existing shipment by serial number and
- * only re-verify the persisted field values (no creation, no filling).
- *
- * Set EXISTING_SHIPMENT_NO=SHP-XX-00/00 in .env to use this path.
- */
-async function openAndVerifyExistingShipment(
-    { dashboardPage, shipmentsPage, shipmentDetailsPage }: Pages,
-    data:     ShipmentData,
-    serialNo: string,
-) {
-    await test.step('Step 1 │ Open Existing Shipment', async () => {
-        await dashboardPage.goto();
-        await shipmentsPage.openShipmentBySerialNo(serialNo);
-        console.log(`\n  ▶ Opened existing shipment: ${serialNo}`);
-    });
+                // Cargo is universal
+                await shipmentEditPage.cargoFill(fullData.cargo);
 
-    await test.step('Step 2 │ Validate Fields', async () => {
-        const map = resolveTabFieldMap(data);
-        for (const [tabName, fields] of Object.entries(map)) {
-            if (!fields || fields.length === 0) continue;
-            await shipmentDetailsPage.verifyTabFields(tabName, fields);
-        }
-    });
-}
+                // Mode specific tabs
+                if (scenario.tags.includes('@air')) {
+                    await shipmentEditPage.mawbFill(mawbData);
+                    if (scenario.mode.includes('HAWB')) {
+                        await shipmentEditPage.hawbFill(hawbData);
+                    }
+                } else if (scenario.tags.includes('@sea')) {
+                    await shipmentEditPage.mblFill(mblData);
+                    if (scenario.mode.includes('HBL')) {
+                        await shipmentEditPage.hblFill(hblData);
+                    }
+                } else if (scenario.tags.includes('@land')) {
+                    await shipmentEditPage.waybillFill(waybillData);
+                }
+            });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ██████████████████████  A I R  ██████████████████████████████████████████████
-//
-// Universal tabs  : Shipment Details | Cargo & Equipment | Cost & Revenues
-// Conditional     : MAWB (always) | HAWB (only with 'MAWB & HAWB')
-// ─────────────────────────────────────────────────────────────────────────────
+            await test.step('Step 4: Persistence Check (Search & Open)', async () => {
+                // Re-locate the shipment to ensure data is saved
+                await shipmentsPage.openShipmentBySerialNo(shipmentNum);
+            });
 
-test.describe('Air Inbound @air @inbound', () => {
-    test.setTimeout(180000);
-
-
-    test('MAWB only → MAWB tab present, HAWB absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Inbound', shipmentMode: 'MAWB Only' } }),
-                ['HAWB'],
-            );
+            await test.step('Step 5: Validate Data', async () => {
+                await shipmentEditPage.shipmentValidate(fullData.details);
+                await shipmentEditPage.cargoValidate(fullData.cargo);
+                
+                if (scenario.tags.includes('@air')) {
+                    await shipmentEditPage.mawbValidate(fullData.mawb);
+                    if (scenario.mode.includes('HAWB')) await shipmentEditPage.hawbValidate(fullData.hawb);
+                } else if (scenario.tags.includes('@sea')) {
+                    await shipmentEditPage.mblValidate(fullData.mbl);
+                    if (scenario.mode.includes('HBL')) await shipmentEditPage.hblValidate(fullData.hbl);
+                } else if (scenario.tags.includes('@land')) {
+                    await shipmentEditPage.waybillValidate(fullData.waybill);
+                }
+            });
         });
-
-    test('MAWB & HAWB → both MAWB and HAWB tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Inbound', shipmentMode: 'MAWB & HAWB' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Air Cross Trade @air @crosstrade', () => {
-    test.setTimeout(180000);
-
-    test('MAWB only → MAWB tab present, HAWB absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Cross Trade', shipmentMode: 'MAWB Only' } }),
-                ['HAWB'],
-            );
-        });
-
-    test('MAWB & HAWB → both MAWB and HAWB tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Cross Trade', shipmentMode: 'MAWB & HAWB' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Air Domestic @air @domestic', () => {
-    test.setTimeout(180000);
-
-    test('MAWB only → MAWB tab present, HAWB absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Domestic', shipmentMode: 'MAWB Only' } }),
-                ['HAWB'],
-            );
-        });
-
-    test('MAWB & HAWB → both MAWB and HAWB tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Domestic', shipmentMode: 'MAWB & HAWB' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Air Outbound @air @outbound', () => {
-    test.setTimeout(180000);
-
-    test('MAWB only → MAWB tab present, HAWB absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Outbound', shipmentMode: 'MAWB Only' } }),
-                ['HAWB'],
-            );
-        });
-
-    test('MAWB & HAWB → both MAWB and HAWB tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createAirShipment({ details: { shipmentType: 'Air Outbound', shipmentMode: 'MAWB & HAWB' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ██████████████████████  L A N D  ████████████████████████████████████████████
-//
-// Universal tabs  : Shipment Details | Cargo & Equipment | Cost & Revenues
-// Conditional     : Waybill | Trucking (always, for every Land type)
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Land Cross Trade @land @crosstrade', () => {
-    test.setTimeout(180000);
-
-
-    test('Waybill → Waybill & Trucking tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createLandShipment({ details: { shipmentType: 'Land Cross Trade' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Land Domestic @land @domestic', () => {
-    test.setTimeout(180000);
-
-
-    test('Waybill → Waybill & Trucking tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createLandShipment({ details: { shipmentType: 'Land Domestic' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Land Inbound @land @inbound', () => {
-    test.setTimeout(180000);
-
-
-    test('Waybill → Waybill & Trucking tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createLandShipment({ details: { shipmentType: 'Land Inbound' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Land Outbound @land @outbound', () => {
-    test.setTimeout(180000);
-
-
-    test('Waybill → Waybill & Trucking tabs present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createLandShipment({ details: { shipmentType: 'Land Outbound' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ██████████████████████  S E A  ██████████████████████████████████████████████
-//
-// Universal tabs  : Shipment Details | Cargo & Equipment | Cost & Revenues
-// Conditional     : MBL (always) | HBL (only with 'MB/L & HB/L')
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Sea Cross Trade @sea @crosstrade', () => {
-    test.setTimeout(180000);
-
-
-    test('MB/L only → MBL present, HBL absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Cross Trade', shipmentMode: 'MB/L Only' } }),
-                ['HBL'],
-            );
-        });
-
-    test('MB/L & HB/L → MBL and HBL both present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Cross Trade', shipmentMode: 'MB/L & HB/L' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Sea Domestic @sea @domestic', () => {
-    test.setTimeout(180000);
-
-
-    test('MB/L only → MBL present, HBL absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Domestic', shipmentMode: 'MB/L Only' } }),
-                ['HBL'],
-            );
-        });
-
-    test('MB/L & HB/L → MBL and HBL both present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Domestic', shipmentMode: 'MB/L & HB/L' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Sea Inbound @sea @inbound', () => {
-    test.setTimeout(180000);
-
-
-    test('MB/L only → MBL present, HBL absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Inbound', shipmentMode: 'MB/L Only' } }),
-                ['HBL'],
-            );
-        });
-
-    test('MB/L & HB/L → MBL and HBL both present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Inbound', shipmentMode: 'MB/L & HB/L' } }),
-            );
-        });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-test.describe('Sea Outbound @sea @outbound', () => {
-    test.setTimeout(180000);
-
-
-    test('MB/L only → MBL present, HBL absent',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Outbound', shipmentMode: 'MB/L Only' } }),
-                ['HBL'],
-            );
-        });
-
-    test('MB/L & HB/L → MBL and HBL both present',
-        async ({ dashboardPage, shipmentsPage, shipmentDetailsPage }) => {
-            await runScenario(
-                { dashboardPage, shipmentsPage, shipmentDetailsPage },
-                createSeaShipment({ details: { shipmentType: 'Sea Outbound', shipmentMode: 'MB/L & HB/L' } }),
-            );
-        });
+    }
 });

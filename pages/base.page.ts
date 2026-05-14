@@ -84,4 +84,27 @@ export class BasePage {
     async selectFromDropdown(testId: string, value: string | undefined) {
         if (value) await this.selectByTestId(testId, value);
     }
+
+    /**
+     * Unified smart selector for MUI combobox fields.
+     * Alias for selectByLocator to match user request.
+     */
+    async comboxFill(trigger: Locator, value: string | string[] | undefined) {
+        await this.selectByLocator(trigger, value);
+    }
+
+    /**
+     * Utility method to expect data in a field.
+     */
+    async expectData(locator: Locator, expectedValue: string) {
+        // Determine if we should check value or text (handles inputs and readonly wrappers)
+        const input = locator.locator('input, textarea').first();
+        if (await input.count() > 0) {
+            // Case-insensitive value check
+            await expect(input).toHaveValue(new RegExp(`^${expectedValue}$`, 'i'), { timeout: 10000 });
+        } else {
+            // Case-insensitive text check
+            await expect(locator).toContainText(new RegExp(expectedValue, 'i'), { timeout: 10000 });
+        }
+    }
 }

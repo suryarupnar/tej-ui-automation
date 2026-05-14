@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { BasePage } from './base.page';
-import { ShipmentData } from '../data/interfaces/master.types';
+import { ShipmentData } from '../data/shipment.data';
 
 export class ShipmentsPage extends BasePage {
 
