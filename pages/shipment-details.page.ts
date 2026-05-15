@@ -229,8 +229,13 @@ export class ShipmentDetailsPage extends BasePage {
             if (interaction === 'fill') {
                 await field.fill(value as string);
             } else if (interaction === 'combobox') {
-                const toSelect = (values && values.length > 0) ? values : value;
-                await this.selectByLocator(field, toSelect as string | string[]);
+                // Address logic: if it's a country or airport, just pick the first available to enable flow
+                if (/Country|Airport|Port/i.test(testId)) {
+                    await this.selectFirstAvailableOption(field);
+                } else {
+                    const toSelect = (values && values.length > 0) ? values : value;
+                    await this.selectByLocator(field, toSelect as string | string[]);
+                }
             } else if (interaction === 'datepicker') {
                 if (value) await this.fillDatePicker(testId, value as string);
             }

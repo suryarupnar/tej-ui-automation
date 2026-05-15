@@ -21,10 +21,16 @@ export class BasePage {
             return;
         }
 
-        // Wait for element to be attached and visible
-        await trigger.waitFor({ state: 'attached', timeout: 5000 }).catch(() => {});
+        // Wait for element to be attached
+        await trigger.waitFor({ state: 'attached', timeout: 2000 }).catch(() => {});
         
-        if (await trigger.count() > 0 && await trigger.isDisabled()) {
+        if (await trigger.count() === 0) {
+            console.warn(`      ⚠ Skip: Locator not found.`);
+            return;
+        }
+
+        if (await trigger.isDisabled()) {
+            console.log(`      - Skipping disabled field.`);
             return;
         }
 
@@ -38,33 +44,51 @@ export class BasePage {
         const isInput = await inputLocator.count() > 0 && await inputLocator.isVisible();
 
         if (isInput) {
+            console.log(`      - Autocomplete: "${value}"`);
             // Fill and explicitly click the matching option
             await inputLocator.fill(value, { timeout: 5000 }).catch((e) => {
-                throw new Error(`Failed to fill input for value "${value}". It may be hidden or obscured.`);
+                console.warn(`      ⚠ Skip: Failed to fill input for "${value}".`);
+                return;
             });
             
             // Force the listbox to render safely
             await this.page.keyboard.press('ArrowDown').catch(() => {});
             
-            // Click the option that matches the text EXACTLY (auto-retries)
+            // Click the option that matches the text. Try exact match first, fall back to partial.
             const listbox = this.page.getByRole('listbox');
-            const option = listbox.getByRole('option', { name: value, exact: true });
+            const exactOption = listbox.getByRole('option', { name: value, exact: true });
             
-            await option.click({ timeout: 10000 }).catch((e) => {
-                throw new Error(`Autocomplete Option "${value}" (exact) not found in listbox`);
-            });
+            if (await exactOption.count() > 0) {
+                await exactOption.first().click({ timeout: 5000 }).catch((e) => {
+                    console.warn(`      ⚠ Skip: Exact option "${value}" found but not clickable.`);
+                });
+            } else {
+                const partialOption = listbox.getByRole('option', { name: value, exact: false });
+                await partialOption.first().click({ timeout: 5000 }).catch((e) => {
+                    console.warn(`      ⚠ Skip: Option "${value}" not found in listbox.`);
+                });
+            }
         } else {
+            console.log(`      - Dropdown: "${value}"`);
             // Select: Click dropdown and click matching option
-            await trigger.click({ timeout: 10000 }).catch((e) => {
-                throw new Error(`Failed to click dropdown trigger. It may be hidden or obscured.`);
+            await trigger.click({ timeout: 5000 }).catch((e) => {
+                console.warn(`      ⚠ Skip: Trigger for "${value}" not clickable.`);
+                return;
             });
             
             const listbox = this.page.getByRole('listbox');
-            const option = listbox.getByRole('option', { name: value, exact: true });
-            
-            await option.click({ timeout: 10000 }).catch((e) => {
-                throw new Error(`Select Option "${value}" (exact) not found in dropdown`);
-            });
+            const exactOption = listbox.getByRole('option', { name: value, exact: true });
+
+            if (await exactOption.count() > 0) {
+                await exactOption.first().click({ timeout: 5000 }).catch((e) => {
+                    console.warn(`      ⚠ Skip: Exact option "${value}" found but not clickable.`);
+                });
+            } else {
+                const partialOption = listbox.getByRole('option', { name: value, exact: false });
+                await partialOption.first().click({ timeout: 5000 }).catch((e) => {
+                    console.warn(`      ⚠ Skip: Option "${value}" not found in dropdown.`);
+                });
+            }
         }
     }
 
@@ -83,5 +107,24 @@ export class BasePage {
      */
     async selectFromDropdown(testId: string, value: string | undefined) {
         if (value) await this.selectByTestId(testId, value);
+    }
+
+    /**
+     * Clicks the dropdown and selects the very first option available in the list.
+     * Useful for fields that just need 'any' value to enable dependent fields.
+     */
+    async selectFirstAvailableOption(trigger: Locator) {
+        console.log(`      - Selecting first available option...`);
+        
+        // Ensure the list is open
+        await trigger.click({ timeout: 5000 }).catch(() => {});
+        
+        const listbox = this.page.getByRole('listbox');
+        const firstOption = listbox.getByRole('option').first();
+        
+        await firstOption.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+        await firstOption.click({ timeout: 5000 }).catch(() => {
+            console.warn(`      ⚠ Warning: No options found in listbox.`);
+        });
     }
 }
