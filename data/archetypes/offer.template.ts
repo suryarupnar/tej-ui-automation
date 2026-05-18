@@ -8,12 +8,16 @@ export const offerBaseTemplate: OfferData = {
             contactPerson: 'mahesh',
         },
         address: {
-            originAddressType: 'Airport',
+            originAddressType: 'Port', // Can be: 'Airport', 'Port', 'Railway Station', 'Land Address'
             originCountry: 'India',
-            originAirport: 'AMD - Sardar Vallabhbhai',
-            destinationAddressType: 'Airport',
+            originAirport: 'AMD - Sardar Vallabhbhai Patel International Airport',
+            originPort: 'INNSA - Jawaharlal Nehru Port (Nhava Sheva) India',
+            originRailwayStation: 'New Delhi Railway Station (NDL)',
+            destinationAddressType: 'Railway Station', // Can be: 'Airport', 'Port', 'Railway Station', 'Land Address'
             destinationCountry: 'India',
-            destinationAirport: 'BOM - Chhatrapati Shivaji',
+            destinationAirport: 'BOM - Chhatrapati Shivaji International Airport',
+            destinationPort: 'INVAD - Vadinar Terminal India',
+            destinationRailwayStation: 'Mumbai Central (BCT)',
         },
         details: {
             mode: 'Air',

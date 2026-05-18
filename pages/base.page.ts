@@ -54,19 +54,20 @@ export class BasePage {
             // Force the listbox to render safely
             await this.page.keyboard.press('ArrowDown').catch(() => {});
             
-            // Click the option that matches the text. Try exact match first, fall back to partial.
             const listbox = this.page.getByRole('listbox');
             const exactOption = listbox.getByRole('option', { name: value, exact: true });
             
-            if (await exactOption.count() > 0) {
-                await exactOption.first().click({ timeout: 5000 }).catch((e) => {
-                    console.warn(`      ⚠ Skip: Exact option "${value}" found but not clickable.`);
-                });
-            } else {
+            try {
+                await exactOption.first().waitFor({ state: 'visible', timeout: 1500 });
+                await exactOption.first().click({ timeout: 5000 });
+            } catch (e) {
                 const partialOption = listbox.getByRole('option', { name: value, exact: false });
-                await partialOption.first().click({ timeout: 5000 }).catch((e) => {
+                try {
+                    await partialOption.first().waitFor({ state: 'visible', timeout: 3000 });
+                    await partialOption.first().click({ timeout: 5000 });
+                } catch (e2) {
                     console.warn(`      ⚠ Skip: Option "${value}" not found in listbox.`);
-                });
+                }
             }
         } else {
             console.log(`      - Dropdown: "${value}"`);
@@ -79,15 +80,17 @@ export class BasePage {
             const listbox = this.page.getByRole('listbox');
             const exactOption = listbox.getByRole('option', { name: value, exact: true });
 
-            if (await exactOption.count() > 0) {
-                await exactOption.first().click({ timeout: 5000 }).catch((e) => {
-                    console.warn(`      ⚠ Skip: Exact option "${value}" found but not clickable.`);
-                });
-            } else {
+            try {
+                await exactOption.first().waitFor({ state: 'visible', timeout: 1500 });
+                await exactOption.first().click({ timeout: 5000 });
+            } catch (e) {
                 const partialOption = listbox.getByRole('option', { name: value, exact: false });
-                await partialOption.first().click({ timeout: 5000 }).catch((e) => {
+                try {
+                    await partialOption.first().waitFor({ state: 'visible', timeout: 3000 });
+                    await partialOption.first().click({ timeout: 5000 });
+                } catch (e2) {
                     console.warn(`      ⚠ Skip: Option "${value}" not found in dropdown.`);
-                });
+                }
             }
         }
     }

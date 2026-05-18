@@ -10,10 +10,12 @@ export interface OfferGeneralData {
         originCountry: string;
         originAirport?: string;
         originPort?: string;
+        originRailwayStation?: string;
         destinationAddressType: string;
         destinationCountry: string;
         destinationAirport?: string;
         destinationPort?: string;
+        destinationRailwayStation?: string;
     };
     details: {
         mode: 'Air'; 
