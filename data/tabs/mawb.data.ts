@@ -73,7 +73,7 @@ export const mawbData = {
 
     // Handling
     specialServiceInfo:       'KEEP UPRIGHT',
-    specialHandlingCodes:     ['ACT - Active Temperature'],
+    specialHandlingCodes:     ['ACT - Active Temperature Controlled System'],
     otherServiceInfo:         'DIRECT FLIGHT PREFERRED',
     sci:                      'I',
 

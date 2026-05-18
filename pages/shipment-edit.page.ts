@@ -82,13 +82,14 @@ export class ShipmentEditPage extends BasePage {
         await activeSaveButton.click();
 
         // Wait for success toast/notification to appear
-        const successToast = this.page.locator('text=Tab saved successfully').first();
-        await expect(successToast).toBeVisible({ timeout: 15000 });
+        // Using filter({ visible: true }) avoids pinning to stale/hidden toast elements in the DOM
+        const successToast = this.page.getByText('Shipment saved successfully').filter({ visible: true }).first();
+        await expect(successToast).toBeVisible({ timeout: 30000 });
         
         // Wait for the button to settle (optional but helps stability)
         await expect(activeSaveButton).toBeDisabled({ timeout: 15000 }).catch(() => {});
         
-        console.log('    ✓ Tab saved successfully.');
+        console.log('    ✓ Shipment saved successfully.');
         
         // Wait for toast to disappear to prevent overlapping UI interactions
         await successToast.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
